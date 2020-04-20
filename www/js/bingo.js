@@ -309,7 +309,7 @@ function listen_challenge(challenge){
                 else somos+=""+user+"<br />";
             }
             canvas_zone_vcentered.innerHTML=' \
-              partida: '+session.challenge_name+'<br />...esperando... <br/>de momento somos '+challenge.u.length+':<br/>'+somos+'<br />\
+              partida: '+session.challenge_name+'<br />...esperando... <br/>de momento somos '+Object.keys(challenge.u).length+':<br/>'+somos+'<br />\
               '+accept_button+'\
             <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
             ';
@@ -335,8 +335,7 @@ function listen_challenge(challenge){
             //}
             var ult3bolas=session.challenge.bolas.slice(-3)
             canvas_zone_vcentered.innerHTML=' \
-              - || - || <b style="font-size:2em">'+ult3bolas[2]+'</b> || '+ult3bolas[1]+' ||'+ult3bolas[0]+'\
-              <br />\
+              <table style="display:inline-block;margin:0;"><tr><td><b style="font-size:2em">'+ult3bolas[2]+'</b></td><td>'+ult3bolas[1]+'</td><td>'+ult3bolas[0]+'</td></tr></table>\
               <table id="carton">\
                 <tr>\
                     <td id="square0" class="filler">&nbsp;</td>\
@@ -373,7 +372,7 @@ function listen_challenge(challenge){
                 </tr>\
             </table>\
              <!--<button id="linea" class="minibutton">Linea</button>-->    <button id="bingo" class="minibutton">BINGO</button> <br />\
-            <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
+            <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button><br />\
             ';
             print_card(session.challenge.u[session.user].carton);
             //document.getElementById("linea").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
@@ -597,7 +596,10 @@ function print_card(card){
 
 function mark(num){
     num=num.substring(6,num.length);
-    if(session.game.cm[num]==1){console.log("desmarcar"+num+" val:"+session.game.cm.join(", "));session.game.cm[num]=0;}
+    if(session.game.cm[num]==1){
+        document.getElementById("square" + num).classList.remove("marked");
+        session.game.cm[num]=0;
+    }
     else{session.game.cm[num]=1;document.getElementById("square" + num).classList.add("marked");}
     //var updates = {};
     //updates['challenges/'+session.challenge_name+'/u/'+session.user+'/mc'] = session.challenge.u[session.user].cm;
@@ -622,7 +624,7 @@ function is_bingo(user){
     if(typeof(user)=='undefined') user=session.user;
     for(var num of session.challenge.u[user].carton){ // better to just do a normal "for"
         var pos=session.challenge.u[user].carton.indexOf(num); // and then this is not needed
-        if(session.challenge.bolas.indexOf(num)==-1){
+        if(num!=-1 && session.challenge.bolas.indexOf(num)==-1){
             if(user==session.user){
                 session.game.cm[pos]=0;
                 session.game.tmpError=num;
@@ -635,7 +637,7 @@ function is_bingo(user){
 
 function check_bingo(user){
     if(!is_bingo(user)){
-        alert("el bingo no es correcto. La bola "+session.game.tmpError+" no ha salido.");
+        alert("El bingo no es correcto. El [["+session.game.tmpError+"]] no ha salido.");
         session.game.tmpError="";
         return;
     }else{

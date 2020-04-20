@@ -14,7 +14,7 @@
     <body>
         <!-- page skeleton -->
         <div id="page">
-            <div id="zone_canvas" class="canvas-with-header">
+            <div id="zone_canvas">
                 <div class="text-center vertical-center-container">
                     <div id="zone_canvas_vcentered" class="text-center vertical-center-content">
                     </div>
@@ -24,12 +24,16 @@
             <div id="splash_screen" >
                 <br /><br /><span style="font-size:36px;color:#eee;">BINGO DE AYALA</span>
                 <span style="font-family: 'Patrick Hand SC';opacity: 0"></span>
+                <br /><button id="splash" class="coolbutton">¡Vamos!</button>
             </div>
             <!-- ----------------------------------- -->
             
         </div>
         
         <!-- scripts -->
+        <script>document.getElementById("splash").addEventListener(clickOrTouch,function(){
+            var splash=document.getElementById("splash_screen");
+            if(splash!=null){ splash.parentNode.removeChild(splash); }});</script>
         <script src="external-git-ignored/cognitionis-js/js/cognitionis.utils.js"></script>
         <script src="external-git-ignored/cognitionis-js/js/firebase-3.6.4.js"></script>
         <!--

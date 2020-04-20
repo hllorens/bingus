@@ -119,9 +119,7 @@ min-height: 80%; CANNOT BE A PERCENTAGE :() min-width:640px; */
 
 /*h1{font-size: 26px; margin: 5px; color: #722;}*/
 
-#header{display:block;position:absolute;top:0px; height:48px;width:100%;background-color:#111} /*overflow:hidden;*/
-#header h1{font-size: 22px; margin: 5px; color: #eee;}
-#zone_canvas{position:absolute; overflow: hidden;background:#fff;top:48px; bottom:1%; width:100%;} /*#fee*/
+#zone_canvas{position:absolute; overflow: hidden;background:#fff;top:0px; bottom:1%; width:100%;} /*#fee*/
 /*HEIGHT perhaps use variables? css3?*/
 
 select, button {font-family:inherit;font-size:inherit;}
@@ -152,9 +150,9 @@ select, button {font-family:inherit;font-size:inherit;}
 #carton {
 	border-collapse: collapse;
     margin: 0 auto;
+    background:#fec;
 }
 #carton th, td {
-	padding: 10px;
 	border: 2px #666 solid;
 	text-align: center;
 	font-size: 24px;
@@ -162,6 +160,8 @@ select, button {font-family:inherit;font-size:inherit;}
 .marked{
     background-color: #faa;
 }
+
+
 
 .coolbutton{
     font-variant: small-caps;
@@ -290,15 +290,6 @@ button.selectedOption{
 }
 
 
-#sound{/*height:40%;*/
-	width:100%;text-align:center;margin:0;padding:1px;
-}
-
-/*
-#answers ul{height:100%;width:100%;align:center;margin:0;padding:0;decoration:none;border:1px solid black;decoration:none;}
-#answers ul li{height:33%;width:100%;text-align:center;margin:0;background:#fee;border:1px solid black;decoration:none;}
-*/
-/*#answers ul li:hover{background:#5b6;border:1px solid red;}*/
 
 #menu-logo-div{height:10px;}
 
@@ -377,26 +368,6 @@ button.go-back{
     text-align: center;
 }
 
-/*.hover_red_border:hover{
-	border:2px solid red;
-}*/
-
-/* not used since it is an sprite */
-/*.hover_red_border img{
-	decoration:none;width:80%; max-width:150px; 
-}
-
-.hover_red_border div{
-	margin: 0 auto;
-	//width:30%;  to make it wide 
-	padding-top:100%;  force square shape 
-}*/
-
-/*Overwrite hamburger*/
-a#hamburger_icon svg {
-	fill: #eee;
-	width: 40px;
-}
 
 
 .vertical-center-container {
@@ -411,81 +382,6 @@ a#hamburger_icon svg {
     vertical-align: middle;
 }
 
-#header_basic{
-    float:left;
-    height:40px; /*for IE, avoids auto greater height*/
-}
-#header_status{
-    color:#999;
-    float:right;
-}
-#header_text{
-    display:-ms-inline-grid; /*for IE, centers it a bit*/
-    color: #fff;
-}
-#header_text:hover{
-	cursor:pointer;
-}
-
-#current_lifes{
-    color:#f00; /*#00e;*/
-    font-weight:bold;
-}
-
-#current_score_num{
-    color: #eee;
-    font-weight:bold;
-}
-
-
-#time_left{
-  /* Reset the default appearance */
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
-              border: none; /* reset in firefox */
-              
-   height:35px;
-    width:200px; /*does not work with 300px or 35%... in chrome*/
-	display:inline-block;
-     /*display: block;
-	position:relative;*/
-     vertical-align: middle;
-
-        /*border-radius: 0px;
-        background: #f00;*/
-	   color:blue;
-       background:#ddd;
-       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
-
-}
-#time_left::-webkit-progress-bar {  
-	height:35px;
-	width:200px;
-       background:#ddd;
-       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
-}
-#time_left::-webkit-progress-value {  
-       background:blue;
-}
-#time_left::-moz-progress-bar {
-       background:blue;
-}
-
-
-#time_left.progress-red{
-       color:#f00;
-}
-#time_left.progress-red::-webkit-progress-bar {  /* container */
-       background:#ddd;
-       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
-}
-#time_left.progress-red::-webkit-progress-value { /* bar */
-       background:#f00;
-}
-#time_left.progress-red::-moz-progress-bar {
-       background:#f00;
-}
 
 
 .js-modal-correct{
@@ -602,8 +498,7 @@ progress::-moz-progress-bar {background-color: #aaa !important;}
 
 /*Galaxy S4  dips=360x640px, iphone 320x480px */
 @media screen and (max-width: 650px) {
-	#header{height:48px;}
-	#zone_canvas{top:48px;}
+	#zone_canvas{top:0px;}
    	#h1{font-size:14px;}
 	#zone_canvas{bottom:0;}
    	#answers{width:80%;}
@@ -617,10 +512,7 @@ progress::-moz-progress-bar {background-color: #aaa !important;}
 
 /* Small Landscape (e.g., Galaxy S4)*/
 @media screen and (max-height: 400px) and (min-width: 420px) {
-	#header{height:42px;}
-	#zone_canvas{top:42px;}
-	/*#header{height:0px;}
-	#zone_canvas{top:0px;}*/ /*remove the header completely*/
+	#zone_canvas{top:0px;}
 	#h1{font-size:14px;}
 	#zone_canvas{bottom:0;}
 	#answers{width:60%;}
@@ -632,45 +524,5 @@ progress::-moz-progress-bar {background-color: #aaa !important;}
 
 
 
-/* short screen (laptop) */
-/*@media screen and (max-height: 720px) {
-  #page{min-height: 600px;height:600px;}
-}
-
-@media screen and (max-height: 720px) and (max-width: 1000px) {
-  #page{min-height: 600px;height:600px;}
-}
-
-@media screen and (min-height: 720px) and (max-width: 1200px) {
-  #page{min-height: 600px;height:600px;}
-}
-
-@media screen and (max-height: 800px) {
-  #page{min-height: 600px;height:600px;}
-}
-*/
 
 
-/* mobile (vertical) */
-/*@media screen and (max-width: 640px) {
-  h1{font-size: 30px;}
-  #zone_message{font-size: 35px;}
-  #zone_score{font-size: 14px;}
-  //#download_zone{display: block; position: relative; left: 0; top: 0;}
-  #download_zone{display: none;}
-  #send_to_phone{display: none;}
-  #zone_message .bt-app-wall {
-    display: inline-block;
-  }
-}*/
-
-/* mobile (horizontal) */
-/*@media screen and (orientation: landscape) {
-  #page{min-height: 0;}
-  #zone_score{display: none;}
-  #zone_jeu{display: none;}
-  #zone_message{display: none;}
-  #download_zone{display: none;}
-  #send_to_phone{display: none;}
-  #msg_portrait{display: block; font-size: 20px; text-align: center; padding: 30px;}
-}*/
