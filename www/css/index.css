@@ -150,13 +150,21 @@ select, button {font-family:inherit;font-size:inherit;}
 #carton {
 	border-collapse: collapse;
     margin: 0 auto;
-    background:#fec;
+    background:#fff8eb;
 }
 #carton th, td {
 	border: 2px #666 solid;
 	text-align: center;
-	font-size: 24px;
+	font-size: 1em;
+    width:10%;
 }
+#bolas{
+    display:inline-block;
+    margin:0;
+}
+/*#bolas td{
+    width:15%;
+}*/
 .marked{
     background-color: #faa;
 }

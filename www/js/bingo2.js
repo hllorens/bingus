@@ -79,9 +79,10 @@ function menu_screen(){
 
 
 function challenge_form(type){
+    reset_local_game();
     canvas_zone_vcentered.innerHTML=' \
-          Nombre partida: <input id="challenge_name" pattern="[a-zA-Z0-9]+" /><br />\
-          Nombre jugador: <input id="jugador" pattern="[a-zA-Z0-9]+" value="'+session.user+'" /><br />\
+          Nombre partida: <input id="challenge_name" pattern="[a-zA-Z0-9]+"  maxlength="10"/><br />\
+          Nombre jugador: <input id="jugador" value="'+session.user+'"  maxlength="10"/><br />\
         <button id="'+type+'">'+type+'</button>\
         <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
         ';
@@ -102,7 +103,7 @@ function challenge_form(type){
         var challenge_name=document.getElementById('challenge_name').value.toLowerCase().trim();
         challenge_name = challenge_name.replace(/[^a-z0-9]/gi,'');
         var username=document.getElementById('jugador').value.toLowerCase().trim();
-        username= username.replace(/[^a-z0-9]/gi,'');
+        username= username.substr(0,11).trim().replace(/\s+/gi,'_');
         if(username.length==0){
             alert("\""+username+"\" no es válido. Use sólo letras sin acento y números.");
         }else{
@@ -120,14 +121,12 @@ function challenge_form(type){
 function challenge_form_action(challenge,type){
     var updates = {};
     var c=random_carton();
-    //var cm=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
     var u={
             role: 'invitee',
             score: 0,
             lifes: 3,
             answer: '',
-            carton:c//,
-            //cm:cm
+            carton:c
         };
     if(type=='crear'){
         u.role='inviter';
@@ -142,6 +141,7 @@ function challenge_form_action(challenge,type){
             time_left: 60,
             timestamp: get_timestamp_str(),
             question: '',
+            linea: '',
             answer_options: ['',''],
             answer_msg: '',
             game_status:'waiting',
@@ -158,7 +158,7 @@ function challenge_form_action(challenge,type){
         updates['challenges/'+session.challenge_name] = challange_instance;
         updates['challenges-beat/'+session.challenge_name] = challenge_beat;
     }else{
-        if(challenge_name==undefined || challenge_name==null || challenge_name=='null' || challenge_name=="" || challenge.game_status!="waiting"){
+        if(challenge_name==null || challenge_name==undefined || challenge_name=='null' || challenge_name=="" || challenge.game_status!="waiting"){
             alert('La partida '+session.challenge_name+' no existe ¿seguro que se llama así?');
             session.challenge_name="";
             return;
@@ -174,7 +174,6 @@ function challenge_form_action(challenge,type){
         };
     }
     // CORE POINT //////////////////////////////////////////////////////////////////////////777777777
-    reset_local_game(); // needed? yes...
     firebase.database().ref().update(updates);
     console.log(type+' partida '+session.challenge_name);
     firebase.database().ref().child('challenges/'+session.challenge_name).on('value', function(snapshot) {listen_challenge(snapshot.val());}); // listen to changes
@@ -231,6 +230,9 @@ function handle_zombies(challenge_beat) {
                             //session.zombies_to_kill=[]; activate to only kill one at a time... could make sense
                             firebase.database().ref().child('challenges/'+session.challenge_name+'/u/'+user).remove();
                             firebase.database().ref().child('challenges-beat/'+session.challenge_name+'/u/'+user).remove();
+                            if(session.challenge!=null && session.game_status=='playing'){
+                                activity_timer.start(); // this will fire next events...
+                            }
                         }else{
                             console.log("leader will kill "+leader);
                         }
@@ -288,10 +290,6 @@ function listen_challenge(challenge){
         ';
         cancel_challenge_prompt(challenge,false); // cancel without asking
     }else{
-        if(Object.keys(challenge.u).length<2 && challenge.game_status!="waiting"){ 
-            console.log("canceling game, only 1 player alive");
-            cancel_challenge_prompt(challenge,false);
-        }
         if(challenge.game_status=='waiting'){
             var accept_button='';
             //var updates = {};
@@ -331,54 +329,75 @@ function listen_challenge(challenge){
             document.getElementById("go-back").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
         }
         else if(challenge.game_status=='playing'){
-            //if(session.user==get_session_master(challenge)){
-            //}
-            var ult3bolas=session.challenge.bolas.slice(-3)
-            canvas_zone_vcentered.innerHTML=' \
-              <table style="display:inline-block;margin:0;"><tr><td><b style="font-size:2em">'+ult3bolas[2]+'</b></td><td>'+ult3bolas[1]+'</td><td>'+ult3bolas[0]+'</td></tr></table>\
-              <table id="carton">\
-                <tr>\
-                    <td id="square0" class="filler">&nbsp;</td>\
-                    <td id="square3" class="filler">&nbsp;</td>\
-                    <td id="square6" class="filler">&nbsp;</td>\
-                    <td id="square9" class="filler">&nbsp;</td>\
-                    <td id="square12" class="filler">&nbsp;</td>\
-                    <td id="square15" class="filler">&nbsp;</td>\
-                    <td id="square18" class="filler">&nbsp;</td>\
-                    <td id="square21" class="filler">&nbsp;</td>\
-                    <td id="square24" class="filler">&nbsp;</td>\
-                </tr>\
-                <tr>\
-                    <td id="square1" class="filler">&nbsp;</td>\
-                    <td id="square4" class="filler">&nbsp;</td>\
-                    <td id="square7" class="filler">&nbsp;</td>\
-                    <td id="square10" class="filler">&nbsp;</td>\
-                    <td id="square13" class="filler">&nbsp;</td>\
-                    <td id="square16" class="filler">&nbsp;</td>\
-                    <td id="square19" class="filler">&nbsp;</td>\
-                    <td id="square22" class="filler">&nbsp;</td>\
-                    <td id="square25" class="filler">&nbsp;</td>\
-                </tr>\
-                <tr>\
-                    <td id="square2" class="filler">&nbsp;</td>\
-                    <td id="square5" class="filler">&nbsp;</td>\
-                    <td id="square8" class="filler">&nbsp;</td>\
-                    <td id="square11" class="filler">&nbsp;</td>\
-                    <td id="square14" class="filler">&nbsp;</td>\
-                    <td id="square17" class="filler">&nbsp;</td>\
-                    <td id="square20" class="filler">&nbsp;</td>\
-                    <td id="square23" class="filler">&nbsp;</td>\
-                    <td id="square26" class="filler">&nbsp;</td>\
-                </tr>\
-            </table>\
-             <!--<button id="linea" class="minibutton">Linea</button>-->    <button id="bingo" class="minibutton">BINGO</button> <br />\
-            <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button><br />\
-            ';
-            print_card(session.challenge.u[session.user].carton);
-            //document.getElementById("linea").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
-            document.getElementById("bingo").addEventListener(clickOrTouch,function(){check_bingo();});
-            document.getElementById("go-back").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
-        }else if(challenge.game_status=='waiting_check'){
+            if(Object.keys(challenge.u).length<2){ 
+                console.log("canceling game, only 1 player alive");
+                cancel_challenge_prompt(challenge,false);
+            }
+            
+            if(challenge.question!=''){
+                canvas_zone_vcentered.innerHTML=' \
+                  '+challenge.question+'\
+                    <br />\
+                 ...continuamos en 5 segundos...\
+                <br />\
+                ';
+            }else{
+                var ult3bolas=session.challenge.bolas.slice(-3)
+                var linea_str='<button id="linea" class="minibutton">Linea</button>';
+                if(challenge.linea!=''){
+                    linea_str='';
+                }
+                canvas_zone_vcentered.innerHTML=' \
+                  <table id="bolas"><tr>\
+                    <td style="font-size:0.5em">bola<br />'+(session.challenge.bolas.length-3)+'</td>\
+                    <td><b style="font-size:2em">'+ult3bolas[2]+'</b></td>\
+                    <td>'+ult3bolas[1]+'</td>\
+                    <td>'+ult3bolas[0]+'</td>\
+                  </tr></table>\
+                  <table id="carton">\
+                    <tr>\
+                        <td id="square0" class="filler">&nbsp;</td>\
+                        <td id="square3" class="filler">&nbsp;</td>\
+                        <td id="square6" class="filler">&nbsp;</td>\
+                        <td id="square9" class="filler">&nbsp;</td>\
+                        <td id="square12" class="filler">&nbsp;</td>\
+                        <td id="square15" class="filler">&nbsp;</td>\
+                        <td id="square18" class="filler">&nbsp;</td>\
+                        <td id="square21" class="filler">&nbsp;</td>\
+                        <td id="square24" class="filler">&nbsp;</td>\
+                    </tr>\
+                    <tr>\
+                        <td id="square1" class="filler">&nbsp;</td>\
+                        <td id="square4" class="filler">&nbsp;</td>\
+                        <td id="square7" class="filler">&nbsp;</td>\
+                        <td id="square10" class="filler">&nbsp;</td>\
+                        <td id="square13" class="filler">&nbsp;</td>\
+                        <td id="square16" class="filler">&nbsp;</td>\
+                        <td id="square19" class="filler">&nbsp;</td>\
+                        <td id="square22" class="filler">&nbsp;</td>\
+                        <td id="square25" class="filler">&nbsp;</td>\
+                    </tr>\
+                    <tr>\
+                        <td id="square2" class="filler">&nbsp;</td>\
+                        <td id="square5" class="filler">&nbsp;</td>\
+                        <td id="square8" class="filler">&nbsp;</td>\
+                        <td id="square11" class="filler">&nbsp;</td>\
+                        <td id="square14" class="filler">&nbsp;</td>\
+                        <td id="square17" class="filler">&nbsp;</td>\
+                        <td id="square20" class="filler">&nbsp;</td>\
+                        <td id="square23" class="filler">&nbsp;</td>\
+                        <td id="square26" class="filler">&nbsp;</td>\
+                    </tr>\
+                </table>\
+                 '+linea_str+'\
+                 <button id="bingo" class="minibutton">BINGO</button> <br />\
+                <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button><br />\
+                ';
+                print_card(session.challenge.u[session.user].carton);
+                if(linea_str!=''){document.getElementById("linea").addEventListener(clickOrTouch,function(){check_linea();});}
+                document.getElementById("bingo").addEventListener(clickOrTouch,function(){check_bingo();});
+                document.getElementById("go-back").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
+            }
         }
     }
 }
@@ -388,8 +407,21 @@ function listen_challenge(challenge){
 
 
 var reset_local_game=function(){
-	//session.num_correct=0; (should be from the game...)
-    session.lifes=3; // should probably be from the game too
+    session={
+        challenge_name:"",
+        user: session.user,
+        timestamp: "0000-00-00 00:00",
+        level: "normal",
+        beat: 0,
+        beat_timeout: null,
+        last_zombies_beat:{},
+        zombies_to_kill:[],
+        challenge:null,
+        game:{
+            cm:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            tmpError:""
+        }
+    };
 	var timestamp=new Date();
 	session.timestamp=timestamp.getFullYear()+"-"+
 		pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + " " +
@@ -397,8 +429,6 @@ var reset_local_game=function(){
     session.last_zombies_beat={};
     session.zombies_to_kill=[];
     activity_timer.reset();
-
-    
 }
 
 var get_session_master=function(challenge){
@@ -420,11 +450,11 @@ function cancel_challenge_prompt(challenge,ask){
 }
 
 function cancel_challenge(challenge){
-    reset_local_game();
     //clearTimeout(show_answer_timeout);
     clearTimeout(session.beat_timeout);
     firebase.database().ref().child('challenges/'+session.challenge_name).off();
     firebase.database().ref().child('challenges-beat/'+session.challenge_name).off();
+    reset_local_game();
     console.log('challenge canceled!');
 
 }
@@ -436,11 +466,27 @@ var countdown_limit_end_secs=7;
 activity_timer.set_limit_end_seconds(countdown_limit_end_secs); 
 var timeout_callback=function(){
 	activity_timer.reset();
-	if(debug) console.log("playing_timeout!!!");
-	new_number();
+	console.log("playing_timeout!!!");
+    if(session.challenge!=null && session.challenge.question!=''){
+        setTimeout(function(){clear_msg();}.bind(this),7000);
+    }else{
+        new_number();
+    }
 }
 activity_timer.set_end_callback(timeout_callback);
 
+
+function clear_msg(){
+    if(session.challenge.question!=''){  // esto debería hacerlo el lider
+        var updates = {};
+        console.log('cancelling msg ');
+        updates['challenges/'+session.challenge_name+'/question'] = '';
+        firebase.database().ref().update(updates);
+        activity_timer.start(); // this will fire next events
+    }
+}
+
+// si el lider muere... el nuevo lider tiene q ejecutar activity timer
 
 
 var card=[];
@@ -627,6 +673,7 @@ function is_bingo(user){
         if(num!=-1 && session.challenge.bolas.indexOf(num)==-1){
             if(user==session.user){
                 session.game.cm[pos]=0;
+                document.getElementById("square" + pos).classList.remove("marked");
                 session.game.tmpError=num;
             }
             return false;
@@ -634,10 +681,9 @@ function is_bingo(user){
     }
     return true;
 }
-
 function check_bingo(user){
     if(!is_bingo(user)){
-        alert("El bingo no es correcto. El [["+session.game.tmpError+"]] no ha salido.");
+        open_js_modal_content_accept("<br />El bingo no es correcto. El [["+session.game.tmpError+"]] no ha salido.<br /><br />");
         session.game.tmpError="";
         return;
     }else{
@@ -647,6 +693,62 @@ function check_bingo(user){
         firebase.database().ref().update(updates);
     }
 }
+
+
+
+
+function is_linea_x(user,arr){
+    if(typeof(user)=='undefined') user=session.user;
+    for(var pos of arr){ // better to just do a normal "for"
+        var num=session.challenge.u[user].carton[pos]; // and then this is not needed
+        if(num!=-1 && session.challenge.bolas.indexOf(num)==-1){
+            if(user==session.user){
+                session.game.cm[pos]=0;
+                document.getElementById("square" + pos).classList.remove("marked");
+                session.game.tmpError=num;
+            }
+            return false;
+        }
+    }
+    return true;
+}
+function is_linea(user){
+    if(typeof(user)=='undefined') user=session.user;
+    if(
+        is_linea_x(user,[0,3,6, 9,12,15,18,21,24]) ||
+        is_linea_x(user,[1,4,7,10,13,16,19,22,25]) ||
+        is_linea_x(user,[2,5,8,11,14,17,20,23,26])
+       ){
+           return true;
+    }
+    return false;
+}
+
+function check_linea(user){
+    if(typeof(user)=='undefined') user=session.user;
+    var updates = {};
+    var question='<b>'+user+'</b> ha cantado línea...<br />';
+    if(!is_linea(user)){
+        question+=" la línea <b>no es correcta</b>.<br />El [["+session.game.tmpError+"]] no ha salido.<br />";
+    }else{
+        question+=' la línea es <b>correcta</b>!<br />';
+        updates['challenges/'+session.challenge_name+'/linea'] = user;
+    }
+    //move to game over
+    updates['challenges/'+session.challenge_name+'/question'] = question;
+    firebase.database().ref().update(updates);
+}
+
+
+
+function all_answered(challenge){
+    for (var user in challenge.u){
+        if(challenge.u[user].answer==undefined || challenge.u[user].answer==null || challenge.u[user].answer=='') return false;
+    }
+    console.log('all answered true');
+    return true;
+}
+
 
 
 function get_winner_string(){
