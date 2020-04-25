@@ -555,9 +555,9 @@ ActivityTimer.prototype.set_tricker_callback=function(cb){this.tricker_callback=
 ActivityTimer.prototype.set_limit_end_seconds=function(sec){this.limit_end_seconds=sec;}
 ActivityTimer.prototype.set_end_callback=function(cb){this.end_callback=cb;}
 ActivityTimer.prototype.start=function(){
-	if(this.dom_anchor==undefined && this.tricker_callback==undefined){
-		console.log("INFO: activity_timer ("+this.name+") without defining dom_anchor or tricker_callback");
-	}
+	//if(this.dom_anchor==undefined && this.tricker_callback==undefined){
+	//	console.log("INFO: activity_timer ("+this.name+") without defining dom_anchor or tricker_callback");
+	//}
 	if(this.started){
 		console.log("ERROR: activity_timer ("+this.name+") already started");
 	}else{

@@ -53,11 +53,11 @@ var canvas_zone_vcentered=document.getElementById('zone_canvas_vcentered');
 
 function menu_screen(){
 	allowBackExit();
-    console.log('menu screen');
+    console.log('menu_screen user: ('+session.user+')');
 	var splash=document.getElementById("splash_screen");
 	if(splash!=null){ splash.parentNode.removeChild(splash); }
 
-	console.log('menu_screen user: ('+session.user+')');
+	
     canvas_zone_vcentered.innerHTML=' \
     <div id="menu-logo-div"></div> \
     <nav id="responsive_menu">\
@@ -81,11 +81,12 @@ function menu_screen(){
 function challenge_form(type){
     reset_local_game();
     canvas_zone_vcentered.innerHTML=' \
-          Nombre partida: <input id="challenge_name" pattern="[a-zA-Z0-9]+"  maxlength="10"/><br />\
+          Nombre partida: <input id="challenge_name" pattern="[a-zA-Z0-9]+"  maxlength="15"/><br />\
           Nombre jugador: <input id="jugador" value="'+session.user+'"  maxlength="10"/><br />\
         <button id="'+type+'">'+type+'</button>\
         <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
         ';
+    document.getElementById("challenge_name").focus();
     document.getElementById("challenge_name").addEventListener("keyup", function(event) {
         if (event.keyCode === 13) {
             event.preventDefault();
@@ -101,15 +102,16 @@ function challenge_form(type){
     document.getElementById(type).addEventListener('click', function(evt) {
         // variables globales de momento...
         var challenge_name=document.getElementById('challenge_name').value.toLowerCase().trim();
-        challenge_name = challenge_name.replace(/[^a-z0-9]/gi,'');
+        //challenge_name = challenge_name.replace(/[^a-z0-9]/gi,'');
         var username=document.getElementById('jugador').value.toLowerCase().trim();
         username= username.substr(0,11).trim().replace(/\s+/gi,'_');
+        username=username.charAt(0).toUpperCase() + username.slice(1);
         if(username.length==0){
-            alert("\""+username+"\" no es válido. Use sólo letras sin acento y números.");
+            alert("\""+username+"\" no puede estar vacío");
         }else{
             session.user=username;
         }
-        if(challenge_name.length==0){alert("\""+challenge_name+"\" no es válido o está vacío. Use sólo letras sin acento y números.");}
+        if(challenge_name.length==0 || challenge_name.match(/[^a-z0-9]/)!=null){alert("Nombre partida=\""+challenge_name+"\" no es válido o está vacío. Use sólo letras sin acento y números (sin espacios).");}
         else{
             session.challenge_name=challenge_name;
             firebase.database().ref().child('challenges/'+challenge_name).once('value', function(snapshot) {challenge_form_action(snapshot.val(),type);}.bind(this));
@@ -191,7 +193,7 @@ function challenge_form_action(challenge,type){
 
 function handle_beat(){
     session.beat++;
-    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),7000); // set it again (or use interval...)
+    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),7500); // set it again (or use interval...)
     var updates={};
     updates['challenges-beat/'+session.challenge_name+'/u/'+session.user+'/beat'] = session.beat;
     firebase.database().ref().update(updates);
@@ -200,20 +202,20 @@ function handle_beat(){
 }
 function handle_zombies(challenge_beat) {
     var challenge_zombies_beat=challenge_beat.u;
-    console.log("handle_zombies "+session.beat);
+    //console.log("handle_zombies "+session.beat);
     if(session.last_zombies_beat==null || Object.keys(session.last_zombies_beat).length!=Object.keys(challenge_zombies_beat).length){ // initialize
         session.last_zombies_beat=challenge_zombies_beat;
         console.log("initialize zombies_beat");
     }else{ // compare local to global
         for (var user in challenge_zombies_beat){
             if(user!=session.user){
-                console.log("is "+user+" a zombie "+challenge_zombies_beat[user].beat+" ("+session.last_zombies_beat[user]+")? to kill "+session.zombies_to_kill.join(", "));
+                //console.log("is "+user+" a zombie "+challenge_zombies_beat[user].beat+" ("+session.last_zombies_beat[user]+")? to kill "+session.zombies_to_kill.join(", "));
                 if(challenge_zombies_beat[user].beat==session.last_zombies_beat[user]){
                     if(session.zombies_to_kill.indexOf(user)==-1){
-                        console.log("candidate");
+                        console.log(user+" zombie candidate");
                         session.zombies_to_kill.push(user);
                     }else{
-                        console.log("yes, who should kill?\n\n");
+                        //console.log(user+" is a zombie, who should kill?");
                         // are there session_masters before me who could kill zombies?
                         var leader=get_session_master(challenge_beat);
                         if(user==leader){
@@ -226,19 +228,22 @@ function handle_zombies(challenge_beat) {
                         }
                         if(leader==session.user){
                             // the session_master is automated. Kill zombies
-                            console.log("I"+session.user+" will kill the zombie!! "+user);
+                            console.log("I ("+session.user+") will kill the zombie: "+user);
                             //session.zombies_to_kill=[]; activate to only kill one at a time... could make sense
                             firebase.database().ref().child('challenges/'+session.challenge_name+'/u/'+user).remove();
                             firebase.database().ref().child('challenges-beat/'+session.challenge_name+'/u/'+user).remove();
-                            if(session.challenge!=null && session.game_status=='playing'){
+                            if(session.challenge!=null && session.challenge.game_status=='playing'){
                                 activity_timer.start(); // this will fire next events...
+                                var updates={};
+                                updates['challenges/'+session.challenge_name+'/question'] = '<b>'+user+'</b> se ha desconectado,<br />el resto,';
+                                firebase.database().ref().update(updates);
                             }
                         }else{
-                            console.log("leader will kill "+leader);
+                            console.log(leader+"leader will kill zombie: "+user);
                         }
                     }
                 }else{
-                    console.log("not a zombie");
+                    //console.log("not a zombie");
                     session.last_zombies_beat[user]=challenge_zombies_beat[user].beat;
                     if(session.zombies_to_kill.indexOf(user)!=-1){
                         console.log("lo quito de candidatos a zombie");
@@ -466,7 +471,7 @@ var countdown_limit_end_secs=7;
 activity_timer.set_limit_end_seconds(countdown_limit_end_secs); 
 var timeout_callback=function(){
 	activity_timer.reset();
-	console.log("playing_timeout!!!");
+	console.log("activity_timer timeout_callback");
     if(session.challenge!=null && session.challenge.question!=''){
         setTimeout(function(){clear_msg();}.bind(this),7000);
     }else{
@@ -585,7 +590,7 @@ function random_carton() {
         }
         //console.log(col);
         card=card.concat(col);
-        console.log(card);
+        //console.log(card);
     }
 //  clean(card);
     return card;
@@ -727,27 +732,27 @@ function is_linea(user){
 function check_linea(user){
     if(typeof(user)=='undefined') user=session.user;
     var updates = {};
-    var question='<b>'+user+'</b> ha cantado línea...<br />';
+    var question='<b>'+user+'</b> ha cantado línea!<br />';
     if(!is_linea(user)){
         question+=" la línea <b>no es correcta</b>.<br />El [["+session.game.tmpError+"]] no ha salido.<br />";
     }else{
         question+=' la línea es <b>correcta</b>!<br />';
         updates['challenges/'+session.challenge_name+'/linea'] = user;
     }
-    //move to game over
+    //move to linea
     updates['challenges/'+session.challenge_name+'/question'] = question;
     firebase.database().ref().update(updates);
 }
 
 
 
-function all_answered(challenge){
+/*function all_answered(challenge){
     for (var user in challenge.u){
         if(challenge.u[user].answer==undefined || challenge.u[user].answer==null || challenge.u[user].answer=='') return false;
     }
     console.log('all answered true');
     return true;
-}
+}*/
 
 
 
@@ -758,7 +763,7 @@ function get_winner_string(){
             winner.push(u);
         }
     }
-    return "Ganador ("+winner.length+"): "+winner.join(", ");
+    return "Ganadores ("+winner.length+"): "+winner.join(", ");
 }
 
 
