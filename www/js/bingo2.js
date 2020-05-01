@@ -20,6 +20,7 @@ var firebaseCodec = {
 	}
 };
 
+var zombie_started=false; // meter en session
 var session={
     challenge_name:"",
 	user: "",
@@ -122,7 +123,10 @@ function challenge_form(type){
 
 function challenge_form_action(challenge,type){
     var updates = {};
-    var c=random_carton();
+    var c=[];
+    do{
+        c=random_carton();
+    }while(!check_carton(c));
     var u={
             role: 'invitee',
             score: 0,
@@ -176,10 +180,10 @@ function challenge_form_action(challenge,type){
         };
     }
     // CORE POINT //////////////////////////////////////////////////////////////////////////777777777
+    zombie_started=false;
     firebase.database().ref().update(updates);
     console.log(type+' partida '+session.challenge_name);
     firebase.database().ref().child('challenges/'+session.challenge_name).on('value', function(snapshot) {listen_challenge(snapshot.val());}); // listen to changes
-    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),7000); // produce beat for this user
     /////////////////////////////////////////////////////////////////////////////////////////777777777
 }
 
@@ -193,7 +197,7 @@ function challenge_form_action(challenge,type){
 
 function handle_beat(){
     session.beat++;
-    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),7500); // set it again (or use interval...)
+    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),12500); // set it again (or use interval...)
     var updates={};
     updates['challenges-beat/'+session.challenge_name+'/u/'+session.user+'/beat'] = session.beat;
     firebase.database().ref().update(updates);
@@ -289,7 +293,7 @@ function listen_challenge(challenge){
     }else if(challenge.game_status=='over'){ // OVER!! -----------------------------------------------
         console.log('challenge over!');
         canvas_zone_vcentered.innerHTML=' \
-          GAME OVER! <br /><br />Winner: '+get_winner_string(challenge)+'<br />\
+          GAME OVER! <br /><br />'+get_winner_string(challenge)+'<br />\
           <button id="accept_over">accept</button>\
         <br />\
         ';
@@ -334,6 +338,10 @@ function listen_challenge(challenge){
             document.getElementById("go-back").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
         }
         else if(challenge.game_status=='playing'){
+            if(!zombie_started){
+                zombie_started=true;
+                session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),12000); // produce beat for this user
+            }
             if(Object.keys(challenge.u).length<2){ 
                 console.log("canceling game, only 1 player alive");
                 cancel_challenge_prompt(challenge,false);
@@ -354,8 +362,8 @@ function listen_challenge(challenge){
                 }
                 canvas_zone_vcentered.innerHTML=' \
                   <table id="bolas"><tr>\
-                    <td style="font-size:0.5em">bola<br />'+(session.challenge.bolas.length-3)+'</td>\
-                    <td><b style="font-size:2em">'+ult3bolas[2]+'</b></td>\
+                    <td style="font-size:2vw">bola<br />'+(session.challenge.bolas.length-3)+'</td>\
+                    <td><b style="font-size:5vw">'+ult3bolas[2]+'</b></td>\
                     <td>'+ult3bolas[1]+'</td>\
                     <td>'+ult3bolas[0]+'</td>\
                   </tr></table>\
@@ -594,6 +602,23 @@ function random_carton() {
     }
 //  clean(card);
     return card;
+}
+
+function check_carton(c){
+    //should check if all rows have 5
+    var row1=[];
+    var row2=[];
+    var row3=[]
+    for(var i=0;i<c.length;i++){
+        if(i%3==0 && c[i]!=-1) row1.push(1);
+        if(i%3==1 && c[i]!=-1) row2.push(1);
+        if(i%3==2 && c[i]!=-1) row3.push(1);
+    }
+    if(row1.length!=5 || row2.length!=5 || row3.length!=5){
+        console.log("cartón incorrecto. regenerar...");
+        return false;
+    }
+    else return true;
 }
 
 function prev2blank(pos,card){

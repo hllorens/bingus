@@ -149,19 +149,26 @@ select, button {font-family:inherit;font-size:inherit;}
 
 #carton {
 	border-collapse: collapse;
-    margin: 0 auto;
+    margin: 0 auto 5px;
     background:#fff8eb;
+    width:80%;
 }
-#carton th, td {
+#carton td {
 	border: 2px #666 solid;
 	text-align: center;
-	font-size: 1em;
-    width:10%;
+	font-size: 4vw;
 }
+
+
+
 #bolas{
+    border: 2px #666 solid;
+	text-align: center;
+	font-size: 3vw;
     display:inline-block;
     margin:0;
 }
+
 /*#bolas td{
     width:15%;
 }*/
@@ -518,6 +525,7 @@ progress::-moz-progress-bar {background-color: #aaa !important;}
     .table-wo-border{font-size: 16px;}
 }
 
+
 /* Small Landscape (e.g., Galaxy S4)*/
 @media screen and (max-height: 400px) and (min-width: 420px) {
 	#zone_canvas{top:0px;}
@@ -529,8 +537,6 @@ progress::-moz-progress-bar {background-color: #aaa !important;}
     #question{font-size: 16px;}
     .table-wo-border{font-size: 16px;}
 }
-
-
 
 
 
