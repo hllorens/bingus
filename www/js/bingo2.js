@@ -297,7 +297,9 @@ function listen_challenge(challenge){
           <button id="accept_over">accept</button>\
         <br />\
         ';
-        cancel_challenge_prompt(challenge,false); // cancel without asking
+        document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
+             cancel_challenge_prompt(challenge,false); // cancel without asking
+        });
     }else{
         if(challenge.game_status=='waiting'){
             var accept_button='';
