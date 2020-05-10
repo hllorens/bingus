@@ -12,70 +12,85 @@ firebase.initializeApp(config);
 
 var firebaseCodec = {
     // firebase does not allow in keys: ".", "#", "$", "/", "[", or "]"
-	encodeFully: function(s) {
-		return encodeURIComponent(s).replace(/\./g, '%2E');
-	},
-	decode: function(s) {
-		return decodeURIComponent(s);
-	}
-};
-
-var zombie_started=false; // meter en session
-var session={
-    challenge_name:"",
-	user: "",
-	timestamp: "0000-00-00 00:00",
-    level: "normal",
-    beat: 0,
-    beat_timeout: null,
-    last_zombies_beat:{},
-    zombies_to_kill:[],
-    challenge:null,
-    game:{
-        cm:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        tmpError:""
-    }
-    /*,
-    last_zombie_check: 0,
-	num_correct: 0,
-	num_answered: 0,
-	result: 0,
-    action: 'send_session_post',
-	details: []*/
+	encodeFully: function(s) {return encodeURIComponent(s).replace(/\./g, '%2E');},
+	decode: function(s) {return decodeURIComponent(s);}
 };
 
 
+var noSleep = null;
+if( /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+    noSleep=new NoSleep();
+}
+
+var zombie_strategy="just_take_lidership"; // or "kill" to completely kick-them-out of challenge
+//var zombie_started=false; // meter en session, only if we want to start at "playing" state... but for the waitroom is also important...
 var activity_timer=new ActivityTimer();
+var session={};
+var reset_local_game=function(){
+    let user="";
+    // keep user name if it is set
+    if (session.hasOwnProperty('user')) user=session.user;
 
+    session={
+        challenge_name:"",
+        user: user,
+        timestamp: new Date(), //.valueOf()
+        level: "normal",
+        used_messages: [],
+        beat: 0,
+        beat_utc: 0,
+        beat_timeout: null,
+        beat_timeout_duration: 7000,
+        last_challenge_beat_snapshot:{},
+        zombies_to_kill:[],
+        challenge:null,
+        game:{
+            cm:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            tmpError:""
+        }
+        /*,
+        last_zombie_check: 0,
+        num_correct: 0,
+        num_answered: 0,
+        result: 0,
+        action: 'send_session_post',
+        details: []*/
+    };
+    
+    /*var timestamp=new Date();
+    session.timestamp=timestamp.getFullYear()+"-"+
+        pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + " " +
+         pad_string(timestamp.getHours(),2,"0") + ":"  + pad_string(timestamp.getMinutes(),2,"0");*/
+    activity_timer.reset();
+}
+
+reset_local_game();
 
 var canvas_zone_vcentered=document.getElementById('zone_canvas_vcentered');
 
 
 
 function menu_screen(){
+    if( /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+        noSleep.disable();
+    }
 	allowBackExit();
     console.log('menu_screen user: ('+session.user+')');
 	var splash=document.getElementById("splash_screen");
 	if(splash!=null){ splash.parentNode.removeChild(splash); }
 
-	
+	let wakelock="";
+    if(mobile_without_wakelock) wakelock=":-( mob_wo_wakelock="+mobile_without_wakelock;
     canvas_zone_vcentered.innerHTML=' \
     <div id="menu-logo-div"></div> \
     <nav id="responsive_menu">\
     <br /><button id="create-button" class="coolbutton">Crear partida</button> \
     <br /><button id="join-button" class="coolbutton">Unirse a partida</button>\
     </nav>\
+    <br /><br /><span style="font-size:0.5vw">'+wakelock+'</span> \
     ';
     document.getElementById("create-button").addEventListener(clickOrTouch,function(){challenge_form('crear');});
     document.getElementById("join-button").addEventListener(clickOrTouch,function(){challenge_form('unirse');});
-    /*if(indicator_list.length==0){
-        indicator_list=Object.keys(data_map);
-        indicator_list.splice(indicator_list.indexOf('history'));
-    } 
-    if(country_list.length==0) load_country_list_from_indicator('population');
-    if(period_list.length==0) load_period_list_from_indicator_ignore_last_year('population');
-    if(fact_list.length==0) load_fact_list_and_map();
-	*/
 }
 
 
@@ -129,6 +144,7 @@ function challenge_form_action(challenge,type){
     }while(!check_carton(c));
     var u={
             role: 'invitee',
+            beat: 'active',
             score: 0,
             lifes: 3,
             answer: '',
@@ -140,47 +156,57 @@ function challenge_form_action(challenge,type){
             alert('el nombre de partida \"'+session.challenge_name+'\" ya existe, elige otro');
             session.challenge_name="";
             return;
+        }else{
+            var challange_instance={
+                // modified by the game
+                name: session.challenge_name,
+                time_left: 60,
+                timestamp: get_timestamp_str(),
+                question: '',
+                linea: '',
+                cantadores: [''],
+                answer_options: ['',''],
+                answer_msg: '',
+                game_status:'waiting',
+                // modified by each user, avoid concurrent mod overwritting
+                u:{}
+            };
+            challange_instance.u[session.user]= u;
+            var challenge_beat={
+                u:{}
+            };
+            //challenge_beat.u[session.user]={ // net to check if firebase will take in key and value...
+            //    beat: session.beat
+            //};
+            updates['challenges/'+session.challenge_name] = challange_instance;
+            updates['challenges-beat/'+session.challenge_name] = challenge_beat;
         }
-        var challange_instance={
-            // modified by the game
-            name: session.challenge_name,
-            time_left: 60,
-            timestamp: get_timestamp_str(),
-            question: '',
-            linea: '',
-            answer_options: ['',''],
-            answer_msg: '',
-            game_status:'waiting',
-            // modified by each user, avoid concurrent mod overwritting
-            u:{}
-        };
-        challange_instance.u[session.user]= u;
-        var challenge_beat={
-            u:{}
-        };
-        challenge_beat.u[session.user]={
-            beat: session.beat
-        };
-        updates['challenges/'+session.challenge_name] = challange_instance;
-        updates['challenges-beat/'+session.challenge_name] = challenge_beat;
     }else{
-        if(challenge_name==null || challenge_name==undefined || challenge_name=='null' || challenge_name=="" || challenge.game_status!="waiting"){
+        if(challenge==null || challenge==undefined || challenge=='null' || challenge==""){
             alert('La partida '+session.challenge_name+' no existe ¿seguro que se llama así?');
             session.challenge_name="";
             return;
-        }
-        if (challenge.u.hasOwnProperty(session.user)){
+        }else if(challenge.game_status!="waiting"){
+            alert('La partida '+session.challenge_name+' ya ha empezado. Has llegado tarde.');
+            session.challenge_name="";
+            return;
+        }else if (challenge.u.hasOwnProperty(session.user)){
             alert('El jugador "'+session.user+'" ya existe. Elige otro nombre.');
             return;
+        }else{
+            var updates = {};
+            updates['challenges/'+session.challenge_name+'/u/'+session.user]=u;
+            /*updates['challenges-beat/'+session.challenge_name+'/u/'+session.user]={
+                beat: session.beat
+            };*/
         }
-        var updates = {};
-        updates['challenges/'+session.challenge_name+'/u/'+session.user]=u;
-        updates['challenges-beat/'+session.challenge_name+'/u/'+session.user]={
-            beat: session.beat
-        };
     }
     // CORE POINT //////////////////////////////////////////////////////////////////////////777777777
-    zombie_started=false;
+    //zombie_started=false; // only if we want to move this to "playing"
+    if( /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+        noSleep.enable();
+    }
+    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),session.beat_timeout_duration); // produce beat for this user
     firebase.database().ref().update(updates);
     console.log(type+' partida '+session.challenge_name);
     firebase.database().ref().child('challenges/'+session.challenge_name).on('value', function(snapshot) {listen_challenge(snapshot.val());}); // listen to changes
@@ -197,62 +223,98 @@ function challenge_form_action(challenge,type){
 
 function handle_beat(){
     session.beat++;
-    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),12500); // set it again (or use interval...)
+    session.beat_utc=new Date();
+    session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),session.beat_timeout_duration); // set it again (or use interval...)
     var updates={};
     updates['challenges-beat/'+session.challenge_name+'/u/'+session.user+'/beat'] = session.beat;
+    updates['challenges-beat/'+session.challenge_name+'/u/'+session.user+'/beat_utc'] = session.beat_utc;
+    if(session.challenge && session.challenge.u && 
+       session.challenge.u[session.user].beat!='active'){
+        updates['challenges/'+session.challenge_name+'/u/'+session.user+'/beat'] = 'active';
+    }
     firebase.database().ref().update(updates);
     firebase.database().ref().child('challenges-beat/'+session.challenge_name).once('value', function(snapshot) {handle_zombies(snapshot.val());});
     // TODO: what if this does not exist??? we should clear the timeout...
 }
 function handle_zombies(challenge_beat) {
-    var challenge_zombies_beat=challenge_beat.u;
-    //console.log("handle_zombies "+session.beat);
-    if(session.last_zombies_beat==null || Object.keys(session.last_zombies_beat).length!=Object.keys(challenge_zombies_beat).length){ // initialize
-        session.last_zombies_beat=challenge_zombies_beat;
-        console.log("initialize zombies_beat");
-    }else{ // compare local to global
-        for (var user in challenge_zombies_beat){
-            if(user!=session.user){
-                //console.log("is "+user+" a zombie "+challenge_zombies_beat[user].beat+" ("+session.last_zombies_beat[user]+")? to kill "+session.zombies_to_kill.join(", "));
-                if(challenge_zombies_beat[user].beat==session.last_zombies_beat[user]){
-                    if(session.zombies_to_kill.indexOf(user)==-1){
-                        console.log(user+" zombie candidate");
-                        session.zombies_to_kill.push(user);
-                    }else{
-                        //console.log(user+" is a zombie, who should kill?");
-                        // are there session_masters before me who could kill zombies?
-                        var leader=get_session_master(challenge_beat);
-                        if(user==leader){
-                            for (var new_leader in challenge_zombies_beat){
-                                if(session.zombies_to_kill.indexOf(new_leader)==-1){
-                                    leader=new_leader;
-                                    break;
+    if(challenge_beat==null || challenge_beat==undefined){ // POTENTIALLY CANCELLED CHALLENGE
+        //cancel_challenge(session.challenge);
+        alert("challenge_beat is null, reset_local_game"); // this should never fire since the timeout should be cleared on cancelling
+        if( /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+            noSleep.disable();
+        }
+        reset_local_game();
+    }else{
+        //console.log("handle_zombies "+session.beat);
+        if(session.last_challenge_beat_snapshot==null || Object.keys(session.last_challenge_beat_snapshot).length!=Object.keys(challenge_beat.u).length){ // initialize
+            session.last_challenge_beat_snapshot=challenge_beat.u;
+            console.log("initialize zombies_beat");
+        }else{ // compare local to global
+            for (var user in challenge_beat.u){ // TODO: we need to keep a list of active users
+                //console.log("checking zombie: "+user);
+                if(user!=session.user){
+                    if(challenge_beat.u[user].beat==session.last_challenge_beat_snapshot[user].beat && session.challenge.u[user].beat!='inactive'){
+                        console.log("is "+user+" a zombie "+challenge_beat.u[user].beat+" ("+session.last_challenge_beat_snapshot[user].beat+")? to kill ("+session.zombies_to_kill.join(", ")+")");
+                        if(session.zombies_to_kill.indexOf(user)==-1){
+                            console.log(user+" zombie candidate");
+                            session.zombies_to_kill.push(user);
+                        }else{
+                            //console.log(user+" is a zombie, who should kill?");
+                            // are there session_masters before me who could kill zombies?
+                            var leader=get_session_master(challenge_beat);
+                            if(user==leader || session.challenge.u[user].beat=='inactive'){
+                                console.log("find new leader");
+                                for (var new_leader in challenge_beat.u){
+                                    if(session.zombies_to_kill.indexOf(new_leader)==-1 && session.challenge.u[user].beat!='inactive'){
+                                        leader=new_leader;
+                                        console.log("new leader="+new_leader);
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        if(leader==session.user){
-                            // the session_master is automated. Kill zombies
-                            console.log("I ("+session.user+") will kill the zombie: "+user);
-                            //session.zombies_to_kill=[]; activate to only kill one at a time... could make sense
-                            firebase.database().ref().child('challenges/'+session.challenge_name+'/u/'+user).remove();
-                            firebase.database().ref().child('challenges-beat/'+session.challenge_name+'/u/'+user).remove();
-                            if(session.challenge!=null && session.challenge.game_status=='playing'){
-                                activity_timer.start(); // this will fire next events...
-                                var updates={};
-                                updates['challenges/'+session.challenge_name+'/question'] = '<b>'+user+'</b> se ha desconectado,<br />el resto,';
-                                firebase.database().ref().update(updates);
+                            if(leader==session.user){
+                                console.log("I ("+session.user+") will kill the zombie: "+user);
+                                if(zombie_strategy=="kill"){
+                                    // the session_master is automated. Kill zombies
+                                    //session.zombies_to_kill=[]; activate to only kill one at a time... could make sense
+                                    firebase.database().ref().child('challenges/'+session.challenge_name+'/u/'+user).remove();
+                                    firebase.database().ref().child('challenges-beat/'+session.challenge_name+'/u/'+user).remove();
+                                    if(session.challenge!=null && session.challenge.game_status=='playing'){
+                                        activity_timer.start(); // this will fire next events...
+                                        let updates={};
+                                        updates['challenges/'+session.challenge_name+'/question'] = '<b>'+user+'</b> se ha desconectado,<br />el resto,';
+                                        firebase.database().ref().update(updates);
+                                    }
+                                }else{ // just take lidership
+                                    let updates={};
+                                    if(session.challenge.u[user].role=="inviter"){ // if we kill the inviter we take the role
+                                        updates['challenges/'+session.challenge_name+'/u/'+user+'/role']='invitee';
+                                        updates['challenges/'+session.challenge_name+'/u/'+leader+'/role']='inviter';
+                                    }
+                                    if(session.challenge!=null && session.challenge.game_status=='playing'){
+                                        activity_timer.start(); // this will fire next events...
+                                        updates['challenges/'+session.challenge_name+'/question'] = '<b>'+user+'</b> se ha desconectado,<br />el resto,';
+                                    }
+                                    if(session.zombies_to_kill.indexOf(user)!=-1){
+                                        session.zombies_to_kill.splice(session.zombies_to_kill.indexOf(user), 1);
+                                    }
+                                    updates['challenges/'+session.challenge_name+'/u/'+user+'/beat'] = 'inactive'; // TODO: better keep this in main challenge
+                                    firebase.database().ref().update(updates);
+                                }
+                            }else{
+                                console.log(leader+" leader will kill zombie: "+user);
                             }
-                        }else{
-                            console.log(leader+"leader will kill zombie: "+user);
+                        }
+                    }else{
+                        //console.log("already inactive or active beating (not a zombie): "+user);
+                        session.last_challenge_beat_snapshot[user]=challenge_beat.u[user];
+                        if(session.zombies_to_kill.indexOf(user)!=-1){
+                            console.log("quito '"+user+"' de candidatos a zombie");
+                            session.zombies_to_kill.splice(session.zombies_to_kill.indexOf(user), 1);
                         }
                     }
                 }else{
-                    //console.log("not a zombie");
-                    session.last_zombies_beat[user]=challenge_zombies_beat[user].beat;
-                    if(session.zombies_to_kill.indexOf(user)!=-1){
-                        console.log("lo quito de candidatos a zombie");
-                        session.zombies_to_kill.splice(session.zombies_to_kill.indexOf(user), 1);
-                    }
+                    session.last_challenge_beat_snapshot[user]=challenge_beat.u[user];
                 }
             }
         }
@@ -278,55 +340,65 @@ function listen_challenge(challenge){
     session.challenge=challenge;
     
     if(challenge==null || challenge==undefined){ // CANCELLED!! -----------------------------------------------
-        cancel_challenge(challenge);
-        if(canvas_zone_vcentered.innerHTML.indexOf('GAME OVER')==-1){
-            canvas_zone_vcentered.innerHTML=' \
-              GAME CANCELLED! <br />Hasta luego baby!<br /><br />\
-              <button id="accept_over">accept</button>\
+        let canceltext=' \
+              GAME CANCELLED! <br />Sayonara baby!<br /><br />\
+              <button id="accept_over">inicio</button>\
             <br />\
             ';
+        if(canvas_zone_vcentered.innerHTML.indexOf('GAME OVER')==-1){
+            canvas_zone_vcentered.innerHTML=canceltext;
+        }else{
+            canvas_zone_vcentered.innerHTML+=canceltext;
         }
+        cancel_challenge(challenge);
         document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
              menu_screen();
 		});
         
     }else if(challenge.game_status=='over'){ // OVER!! -----------------------------------------------
+        activity_timer.stop();
         console.log('challenge over!');
         canvas_zone_vcentered.innerHTML=' \
-          GAME OVER! <br /><br />'+get_winner_string(challenge)+'<br />\
+          GAME OVER! <br /><br />Cantado por:'+challenge.cantadores.join(', ')+'<br />'+get_winner_string(challenge)+'<br />\
           <button id="accept_over">accept</button>\
         <br />\
         ';
         document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
+             canvas_zone_vcentered='<br />Cantado por:'+challenge.cantadores.join(', ')+'<br />'+get_winner_string(challenge)+'<br />\
+              <button id="accept_over">accept</button>\
+            <br />\
+            '; // remove over for the one that clicks accept so that the cancel screen is updated
              cancel_challenge_prompt(challenge,false); // cancel without asking
         });
     }else{
         if(challenge.game_status=='waiting'){
-            var accept_button='';
+            let accept_button='';
             //var updates = {};
-            var session_master=get_session_master(challenge);
-            if(session.user==session_master && Object.keys(challenge.u).length>1){
+            var inviter=get_inviter();
+            if(session.user==inviter && Object.keys(challenge.u).filter(obj => challenge.u[obj].beat=='active').length>1){
                 accept_button='<button id="start_challenge">start</button>';
             }else{
-                accept_button='<br /><br/>"'+session_master+'" decidirá cuando empezar (min: 2 jug)';
+                accept_button='<br /><br/>"'+inviter+'" decidirá cuando empezar (min: 2 jug)';
             }
             //firebase.database().ref().update(updates);
             //challenge:'+JSON.stringify(challenge)+'
-            var somos="";
+            let somos="";
             for (var user in challenge.u){
-                if(user==session.user) somos+=""+user+" (tú)<br />";
-                else somos+=""+user+"<br />";
+                let ubeat="";
+                if(challenge.u[user].beat!='active') ubeat='[inactivo]'
+                if(user==session.user) somos+=""+user+" (tú) "+ubeat+"<br />";
+                else somos+=""+user+" "+ubeat+"<br />";
             }
             canvas_zone_vcentered.innerHTML=' \
               partida: '+session.challenge_name+'<br />...esperando... <br/>de momento somos '+Object.keys(challenge.u).length+':<br/>'+somos+'<br />\
               '+accept_button+'\
             <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
             ';
-            console.log('session-master:'+get_session_master(challenge));
+            console.log('inviter:'+inviter);
             if(
                 //(
                 //session.challenge.u[session.user].role=='inviter' || 
-                session.user==get_session_master(challenge)
+                session.user==inviter
                 //) 
                 && Object.keys(challenge.u).length>1){
                 document.getElementById("start_challenge").addEventListener(clickOrTouch,function(){
@@ -340,10 +412,10 @@ function listen_challenge(challenge){
             document.getElementById("go-back").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
         }
         else if(challenge.game_status=='playing'){
-            if(!zombie_started){
+            /*if(!zombie_started){
                 zombie_started=true;
                 session.beat_timeout=setTimeout(function(){handle_beat();}.bind(this),12000); // produce beat for this user
-            }
+            }*/
             if(Object.keys(challenge.u).length<2){ 
                 console.log("canceling game, only 1 player alive");
                 cancel_challenge_prompt(challenge,false);
@@ -358,10 +430,25 @@ function listen_challenge(challenge){
                 ';
             }else{
                 var ult3bolas=session.challenge.bolas.slice(-3)
-                var linea_str='<button id="linea" class="minibutton">Linea</button>';
+                let linea_str='<button id="linea" class="minibutton">Linea</button>';
                 if(challenge.linea!=''){
                     linea_str='';
                 }
+                let special_str='';
+                if(session.game.cm.reduce(function(a, b){return a + b;}, 0)>12 &&
+                         session.used_messages.indexOf('me quedan pocas')==-1){
+                    special_str='<button id="special_str" class="minibutton">me quedan pocas</button>';
+                }else if(session.game.cm.reduce(function(a, b){return a + b;}, 0)<5 &&
+                         (session.challenge.bolas.length-3)>20 &&
+                         session.used_messages.indexOf('no marco')==-1){
+                    special_str='<button id="special_str" class="minibutton">no marco</button>';
+                }else if(session.game.cm.reduce(function(a, b){return a + b;}, 0)<10 &&
+                         (session.challenge.bolas.length-3)>60 &&
+                         session.used_messages.indexOf('no marco')==-1){
+                    special_str='<button id="special_str" class="minibutton">no marco</button>';
+                }
+                // TODO continuar por aquí...
+                
                 canvas_zone_vcentered.innerHTML=' \
                   <table id="bolas"><tr>\
                     <td style="font-size:2vw">bola<br />'+(session.challenge.bolas.length-3)+'</td>\
@@ -404,11 +491,29 @@ function listen_challenge(challenge){
                         <td id="square26" class="filler">&nbsp;</td>\
                     </tr>\
                 </table>\
+                 '+special_str+'\
                  '+linea_str+'\
                  <button id="bingo" class="minibutton">BINGO</button> <br />\
                 <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button><br />\
                 ';
                 print_card(session.challenge.u[session.user].carton);
+                if(special_str!=''){document.getElementById("special_str").addEventListener(clickOrTouch,function(){
+                    let updates={};
+                    special_str=special_str.replace(/<[^>]*>?/gm, '');
+                    session.used_messages.push(special_str);
+                    switch(special_str) {
+                      case "me quedan pocas":
+                        special_str = "Me quedan pocas, voy a ganar ;-)";
+                        break;
+                      case "no marco":
+                        special_str = "No marco ni a la de tres! :-(";
+                        break;
+                      default:
+                        special_str = "no se que iba a decir...";
+                    }
+                    updates['challenges/'+session.challenge_name+'/question'] = '<b>'+session.user+'</b> dice: '+special_str;
+                    firebase.database().ref().update(updates);
+                });}
                 if(linea_str!=''){document.getElementById("linea").addEventListener(clickOrTouch,function(){check_linea();});}
                 document.getElementById("bingo").addEventListener(clickOrTouch,function(){check_bingo();});
                 document.getElementById("go-back").addEventListener(clickOrTouch,function(){cancel_challenge_prompt(challenge);}.bind(challenge));
@@ -421,34 +526,9 @@ function listen_challenge(challenge){
 
 
 
-var reset_local_game=function(){
-    session={
-        challenge_name:"",
-        user: session.user,
-        timestamp: "0000-00-00 00:00",
-        level: "normal",
-        beat: 0,
-        beat_timeout: null,
-        last_zombies_beat:{},
-        zombies_to_kill:[],
-        challenge:null,
-        game:{
-            cm:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            tmpError:""
-        }
-    };
-	var timestamp=new Date();
-	session.timestamp=timestamp.getFullYear()+"-"+
-		pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + " " +
-		 pad_string(timestamp.getHours(),2,"0") + ":"  + pad_string(timestamp.getMinutes(),2,"0");
-    session.last_zombies_beat={};
-    session.zombies_to_kill=[];
-    activity_timer.reset();
-}
 
-var get_session_master=function(challenge){
-    return Object.keys(challenge.u).sort()[0];
-}
+
+
 
 
 function cancel_challenge_prompt(challenge,ask){
@@ -492,8 +572,8 @@ activity_timer.set_end_callback(timeout_callback);
 
 
 function clear_msg(){
-    if(session.challenge.question!=''){  // esto debería hacerlo el lider
-        var updates = {};
+    if(session.challenge.question!=''){  // esto podría hacerlo el lider
+        let updates = {};
         console.log('cancelling msg ');
         updates['challenges/'+session.challenge_name+'/question'] = '';
         firebase.database().ref().update(updates);
@@ -687,25 +767,69 @@ function mark(num){
 
 function new_number(){
     // use session challenge
-    var bola=0;
-    do{
-        bola=Math.floor((Math.random()*89))+1;
-    }while(session.challenge.bolas.indexOf(bola)!=-1);
-    session.challenge.bolas.push(bola);
-    var updates = {};
-    updates['challenges/'+session.challenge_name+'/bolas'] = session.challenge.bolas;
-    firebase.database().ref().update(updates);
-    activity_timer.start(); // this will fire next events
+    if(session.challenge.bolas.length<93){ // 3 zeros added to start...
+        var bola=0;
+        var todas=new Array(90);
+        for(var i = 0; i < todas.length; i++){
+          todas[i]=i+1;
+        }
+        var diff = todas.filter(x => !session.challenge.bolas.includes(x));
+        bola=diff[Math.floor(Math.random()*diff.length)];
+        //do{
+        //}while(session.challenge.bolas.indexOf(bola)!=-1);
+        session.challenge.bolas.push(bola);
+        var updates = {};
+        updates['challenges/'+session.challenge_name+'/bolas'] = session.challenge.bolas;
+        firebase.database().ref().update(updates);
+        activity_timer.start(); // this will fire next events
+    }else{
+        activity_timer.stop();
+        var question='Ya han salido todas las bolas... ay ay ay alguien se ha dormido!<br />';
+        var updates = {};
+        session.challenge.cantadores.push('..nadie..');
+        if(session.challenge.cantadores[0]==""){
+            session.challenge.cantadores.shift();
+        }
+        updates['challenges/'+session.challenge_name+'/game_status'] = 'over';
+        updates['challenges/'+session.challenge_name+'/cantadores'] = session.challenge.cantadores;
+        let timestamp=session.timestamp;
+        timestamp=timestamp.getFullYear()+"-"+
+        pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + "_" +
+          pad_string(timestamp.getHours(),2,"0") + ""  + pad_string(timestamp.getMinutes(),2,"0");
+        updates['challenges-log/'+session.challenge_name+'_'+timestamp+'/'] = session.challenge;
+        firebase.database().ref().update(updates);
+    }
+}
+
+
+function auto_mark(){
+    var user=session.user;
+    for(var num of session.challenge.u[user].carton){ // better to just do a normal "for"
+        var pos=session.challenge.u[user].carton.indexOf(num); // and then this is not needed
+        if(num!=-1){
+            if(session.challenge.bolas.indexOf(num)==-1){
+                session.game.cm[pos]=0;
+                document.getElementById("square" + pos).classList.remove("marked");
+            }else{
+                session.game.cm[pos]=1;
+                document.getElementById("square" + pos).classList.add("marked");
+            }
+        }
+    }
 }
 
 function is_bingo(user){
     if(typeof(user)=='undefined') user=session.user;
+    if(session.challenge==null || typeof(session.challenge)=='undefined' ||
+        typeof(session.challenge.u[user].carton)=='undefined')
+            return false;
     for(var num of session.challenge.u[user].carton){ // better to just do a normal "for"
         var pos=session.challenge.u[user].carton.indexOf(num); // and then this is not needed
         if(num!=-1 && session.challenge.bolas.indexOf(num)==-1){
             if(user==session.user){
                 session.game.cm[pos]=0;
-                document.getElementById("square" + pos).classList.remove("marked");
+                if(document.getElementById("square" + pos) !== null)
+                    document.getElementById("square" + pos).classList.remove("marked");
                 session.game.tmpError=num;
             }
             return false;
@@ -714,14 +838,26 @@ function is_bingo(user){
     return true;
 }
 function check_bingo(user){
+    if(typeof(user)=='undefined') user=session.user;
     if(!is_bingo(user)){
         open_js_modal_content_accept("<br />El bingo no es correcto. El [["+session.game.tmpError+"]] no ha salido.<br /><br />");
         session.game.tmpError="";
         return;
     }else{
         //move to game over
+        session.challenge.cantadores.push(user);
+        if(session.challenge.cantadores[0]==""){
+            session.challenge.cantadores.shift();
+        }
+        activity_timer.stop();
         var updates = {};
         updates['challenges/'+session.challenge_name+'/game_status'] = 'over';
+        updates['challenges/'+session.challenge_name+'/cantadores'] = session.challenge.cantadores;
+        let timestamp=session.timestamp;
+        timestamp=timestamp.getFullYear()+"-"+
+        pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + "_" +
+         pad_string(timestamp.getHours(),2,"0") + ""  + pad_string(timestamp.getMinutes(),2,"0");
+        updates['challenges-log/'+session.challenge_name+'_'+timestamp+'/'] = session.challenge;
         firebase.database().ref().update(updates);
     }
 }
@@ -781,7 +917,15 @@ function check_linea(user){
     return true;
 }*/
 
+function get_inviter(){
+    for(var u in session.challenge.u){
+        if (session.challenge.u[u].role=="inviter") return u;
+    }
+}
 
+var get_session_master=function(challenge){
+    return Object.keys(challenge.u).sort()[0];
+}
 
 function get_winner_string(){
     var winner=[];
@@ -803,8 +947,15 @@ if(QueryString.hasOwnProperty('debug') && QueryString.debug=='true') debug=true;
 // responsive tunings
 prevent_scrolling();
 
+var mobile_without_wakelock=false;
+
+if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && navigator && !('getWakeLock' in navigator || 'requestWakeLock' in navigator) ) {
+    mobile_without_wakelock=true;
+}
+
 var is_app=is_cordova();
 if(is_app){
+    console.log('is_app');
     if (!window.cordova) alert("ERROR: Running cordova without including cordova.js!");
 	document.addEventListener('deviceready', onDeviceReady, false);
 }else{

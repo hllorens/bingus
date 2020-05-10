@@ -39,19 +39,24 @@
         </div>
         
         <!-- scripts -->
+        <script src="external-git-ignored/cognitionis-js/js/expose_timers.js"></script>
         <script src="external-git-ignored/cognitionis-js/js/cognitionis.utils.js"></script>
         <script src="external-git-ignored/cognitionis-js/js/firebase-3.6.4.js"></script>
-        <script>document.getElementById("splash").addEventListener(clickOrTouch,function(){
-            var splash=document.getElementById("splash_screen");
-            if(splash!=null){ splash.parentNode.removeChild(splash); }});</script>
+
         <!--
         ni cordova de momento...
         <script src="https://apis.google.com/js/platform.js" async defer></script>
         <script src="js/auto-complete.min.js"></script>
          <script src="js/index.js"></script>-->
         <script type="text/javascript" src="cordova.js"></script>
-        <script src="js/bingo2.js"></script>
-
-        
+        <script src="js/NoSleepWakeLockAPI.min.js"></script>
+        <script src="js/bingo3.js"></script>
+        <script>
+            if(document.getElementById("splash")!== null){
+                document.getElementById("splash").addEventListener(clickOrTouch,function(){
+                var splash=document.getElementById("splash_screen");
+                if(splash!=null){ splash.parentNode.removeChild(splash); menu_screen();}});
+            }
+        </script>
     </body>
 </html>

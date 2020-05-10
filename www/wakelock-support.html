@@ -1,0 +1,39 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+      <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+      <meta charset="UTF-8">
+    <!--cordova-->
+        <!-- for ios... really breaks some parts...-->
+        <!--<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">-->
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- end cordova -->
+
+    </head>
+
+
+    <body>
+        <!-- page skeleton -->
+        <div id="mobile"></div>
+        <br /><br />
+        <div id="wakelock"></div>
+        
+        <!-- scripts -->
+        <script>
+        document.getElementById("mobile").innerHTML="NOT MOBILE";
+        if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+             document.getElementById("mobile").innerHTML="MOBILE: "+navigator.userAgent;
+        }
+        document.getElementById("wakelock").innerHTML="NOT WAKELOCK SUPPORT";
+        if (navigator && 'getWakeLock' in navigator) {
+             document.getElementById("mobile").innerHTML="WAKELOCK SUPPORTED";
+        }
+        
+        </script>
+
+
+        
+    </body>
+</html>

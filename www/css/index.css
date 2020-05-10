@@ -151,7 +151,7 @@ select, button {font-family:inherit;font-size:inherit;}
 	border-collapse: collapse;
     margin: 0 auto 5px;
     background:#fff8eb;
-    width:80%;
+    width:84%;
 }
 #carton td {
 	border: 2px #666 solid;
@@ -537,6 +537,3 @@ progress::-moz-progress-bar {background-color: #aaa !important;}
     #question{font-size: 16px;}
     .table-wo-border{font-size: 16px;}
 }
-
-
-
