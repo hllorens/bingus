@@ -948,8 +948,7 @@ if(QueryString.hasOwnProperty('debug') && QueryString.debug=='true') debug=true;
 prevent_scrolling();
 
 var mobile_without_wakelock=false;
-
-if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && navigator && !('getWakeLock' in navigator || 'requestWakeLock' in navigator) ) {
+if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && ( !('wakeLock' in navigator) && !('getWakeLock' in navigator) && !('requestWakeLock' in navigator)  && !('WakeLock' in window) ) {
     mobile_without_wakelock=true;
 }
 
