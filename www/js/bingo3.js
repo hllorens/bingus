@@ -40,7 +40,7 @@ var reset_local_game=function(){
         beat: 0,
         beat_utc: 0,
         beat_timeout: null,
-        beat_timeout_duration: 7000,
+        beat_timeout_duration: 9000,
         last_challenge_beat_snapshot:{},
         zombies_to_kill:[],
         challenge:null,
@@ -76,7 +76,7 @@ function menu_screen(){
     }
 	allowBackExit();
     console.log('menu_screen user: ('+session.user+')');
-	var splash=document.getElementById("splash_screen");
+	let splash=document.getElementById("splash_screen");
 	if(splash!=null){ splash.parentNode.removeChild(splash); }
 
 	let wakelock="";
@@ -84,33 +84,38 @@ function menu_screen(){
     canvas_zone_vcentered.innerHTML=' \
     <div id="menu-logo-div"></div> \
     <nav id="responsive_menu">\
+    <span style="font-size:6vw;color:#0b5394;font-weight:bold;">BINGO</span><br /><span style="font-family:cursive;">¡para TODOS!</span><br />\
     <br /><button id="create-button" class="coolbutton">Crear partida</button> \
     <br /><button id="join-button" class="coolbutton">Unirse a partida</button>\
     </nav>\
-    <br /><br /><span style="font-size:0.5vw">'+wakelock+'</span> \
+    <br /><br /><span id="spaninfo" style="font-size:0.7vw">'+wakelock+' is_app='+is_app+'</span> \
     ';
+    if(is_app){
+        admob.showBannerAd(false, function(){document.getElementById('spaninfo').innerHTML+="<br /><br /><span style=\"font-size:0.7vw;\">BANNER OK</span>";}, function(){document.getElementById('spaninfo').innerHTML+="<br /><br /><span style=\"font-size:0.7vw;\">BANNER FAIL</span>";});
+    }
     document.getElementById("create-button").addEventListener(clickOrTouch,function(){challenge_form('crear');});
     document.getElementById("join-button").addEventListener(clickOrTouch,function(){challenge_form('unirse');});
+    
 }
 
 
 function challenge_form(type){
     reset_local_game();
     canvas_zone_vcentered.innerHTML=' \
-          Nombre partida: <input id="challenge_name" pattern="[a-zA-Z0-9]+"  maxlength="15"/><br />\
-          Nombre jugador: <input id="jugador" value="'+session.user+'"  maxlength="10"/><br />\
-        <button id="'+type+'">'+type+'</button>\
+          <span style="font-variant: small-caps;font-size:4vw;">Partida:</span> <input class="coolinput" id="challenge_name" pattern="[a-zA-Z0-9]+"  maxlength="15"/><br />\
+          <span style="font-variant: small-caps;font-size:4vw;">Jugador:</span> <input class="coolinput" id="jugador" value="'+session.user+'"  maxlength="10"/><br />\
+        <button class="coolbutton" id="'+type+'">'+type+'</button>\
         <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
         ';
     document.getElementById("challenge_name").focus();
     document.getElementById("challenge_name").addEventListener("keyup", function(event) {
-        if (event.keyCode === 13) {
+        if(!( /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) && event.keyCode && event.keyCode === 13) {
             event.preventDefault();
             document.getElementById("jugador").focus();
         }
     });
     document.getElementById("jugador").addEventListener("keyup", function(event) {
-        if (event.keyCode === 13) {
+        if (!( /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) && event.keyCode && event.keyCode === 13) {
             event.preventDefault();
             document.getElementById(type).click();
         }
@@ -192,6 +197,9 @@ function challenge_form_action(challenge,type){
             return;
         }else if (challenge.u.hasOwnProperty(session.user)){
             alert('El jugador "'+session.user+'" ya existe. Elige otro nombre.');
+            return;
+        }else if (Object.keys(challenge.u).length>29){
+            alert('No caben más jugadores (max 30).');
             return;
         }else{
             var updates = {};
@@ -342,15 +350,15 @@ function listen_challenge(challenge){
     if(challenge==null || challenge==undefined){ // CANCELLED!! -----------------------------------------------
         let canceltext=' \
               GAME CANCELLED! <br />Sayonara baby!<br /><br />\
-              <button id="accept_over">inicio</button>\
+              <button class="coolbutton" id="accept_over">inicio</button>\
             <br />\
             ';
         if(canvas_zone_vcentered.innerHTML.indexOf('GAME OVER')==-1){
             canvas_zone_vcentered.innerHTML=canceltext;
         }else{
-            canvas_zone_vcentered.innerHTML+=canceltext;
+            canvas_zone_vcentered.innerHTML+='GAME CANCELLED! <br />Sayonara baby!<br /><br />';
         }
-        cancel_challenge(challenge);
+        cancel_challenge();
         document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
              menu_screen();
 		});
@@ -360,14 +368,21 @@ function listen_challenge(challenge){
         console.log('challenge over!');
         canvas_zone_vcentered.innerHTML=' \
           GAME OVER! <br /><br />Cantado por:'+challenge.cantadores.join(', ')+'<br />'+get_winner_string(challenge)+'<br />\
-          <button id="accept_over">accept</button>\
+          <button class="coolbutton" id="accept_over">accept</button>\
         <br />\
+        <br /><span id="spaninfo" style="font-size:0.7vw">is_app='+is_app+'</span> \
         ';
+        if(is_app){ //admob
+            admob.showBannerAd(true, function(){document.getElementById('spaninfo').innerHTML+="<br /><br /><span style=\"font-size:0.7vw;\">BANNER OK</span>";}, function(){document.getElementById('spaninfo').innerHTML+="<br /><br /><span style=\"font-size:0.7vw;\">BANNER FAIL</span>";});
+        }else if(!is_local()){ // adsense
+             canvas_zone_vcentered.innerHTML+='<ins class="adsbygoogle" style="display:block" data-ad-format="fluid"\
+             data-ad-layout-key="-fb+5w+4e-db+86"\
+             data-ad-client="ca-pub-1143362957092180"\
+             data-ad-slot="3596710175"></ins>';
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        }
         document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
-             canvas_zone_vcentered='<br />Cantado por:'+challenge.cantadores.join(', ')+'<br />'+get_winner_string(challenge)+'<br />\
-              <button id="accept_over">accept</button>\
-            <br />\
-            '; // remove over for the one that clicks accept so that the cancel screen is updated
+             // remove over for the one that clicks accept so that the cancel screen is updated
              cancel_challenge_prompt(challenge,false); // cancel without asking
         });
     }else{
@@ -376,24 +391,37 @@ function listen_challenge(challenge){
             //var updates = {};
             var inviter=get_inviter();
             if(session.user==inviter && Object.keys(challenge.u).filter(obj => challenge.u[obj].beat=='active').length>1){
-                accept_button='<button id="start_challenge">start</button>';
+                accept_button='<button class="coolbutton" id="start_challenge">empezar</button>';
             }else{
                 accept_button='<br /><br/>"'+inviter+'" decidirá cuando empezar (min: 2 jug)';
             }
             //firebase.database().ref().update(updates);
             //challenge:'+JSON.stringify(challenge)+'
-            let somos="";
-            for (var user in challenge.u){
-                let ubeat="";
-                if(challenge.u[user].beat!='active') ubeat='[inactivo]'
-                if(user==session.user) somos+=""+user+" (tú) "+ubeat+"<br />";
-                else somos+=""+user+" "+ubeat+"<br />";
-            }
             canvas_zone_vcentered.innerHTML=' \
-              partida: '+session.challenge_name+'<br />...esperando... <br/>de momento somos '+Object.keys(challenge.u).length+':<br/>'+somos+'<br />\
+              PARTIDA: <b>'+session.challenge_name+'</b><br/>de momento somos <b>'+Object.keys(challenge.u).length+'</b><br/><br/>\
+              <table id="players">\
+            <tr><td id="p1" class="filler" style="width:50%">&nbsp;</td><td id="p2" class="filler" style="width:50%">&nbsp;</td></tr>\
+            <tr><td id="p3" class="filler">&nbsp;</td><td id="p4" class="filler">&nbsp;</td></tr>\
+            <tr><td id="p5" class="filler">&nbsp;</td><td id="p6" class="filler">&nbsp;</td></tr>\
+            <tr><td id="p7" class="filler">&nbsp;</td><td id="p8" class="filler">&nbsp;</td></tr>\
+            <tr><td id="p9" class="filler">&nbsp;</td><td id="p10" class="filler">&nbsp;</td></tr>\
+            </table>\
               '+accept_button+'\
             <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button> \
             ';
+            for(var i=1 ; i<=Object.keys(challenge.u).length ; i++){
+                let pnum=document.getElementById("p"+i);
+                let ubeat="";
+                let user=Object.keys(challenge.u)[i-1];
+                if(i>10){
+                    document.getElementById("p10").innerHTML="y más...";
+                    break;
+                }
+                if(challenge.u[user].beat!='active') ubeat='[inactivo]'
+                if(user==session.user) pnum.innerHTML=user+" (tú) "+ubeat;
+                else pnum.innerHTML=""+user+" "+ubeat+"";
+            }
+
             console.log('inviter:'+inviter);
             if(
                 //(
@@ -430,22 +458,22 @@ function listen_challenge(challenge){
                 ';
             }else{
                 var ult3bolas=session.challenge.bolas.slice(-3)
-                let linea_str='<button id="linea" class="minibutton">Linea</button>';
+                let linea_str='<button class="coolbutton" id="linea">Linea</button>';
                 if(challenge.linea!=''){
                     linea_str='';
                 }
                 let special_str='';
-                if(session.game.cm.reduce(function(a, b){return a + b;}, 0)>12 &&
+                if(session.game.cm.reduce(function(a, b){return a + b;}, 0)>11 &&
                          session.used_messages.indexOf('me quedan pocas')==-1){
-                    special_str='<button id="special_str" class="minibutton">me quedan pocas</button>';
-                }else if(session.game.cm.reduce(function(a, b){return a + b;}, 0)<5 &&
+                    special_str='<button class="coolbutton" id="special_str">me quedan pocas</button>';
+                }else if(session.game.cm.reduce(function(a, b){return a + b;}, 0)<6 &&
                          (session.challenge.bolas.length-3)>20 &&
                          session.used_messages.indexOf('no marco')==-1){
-                    special_str='<button id="special_str" class="minibutton">no marco</button>';
+                    special_str='<button class="coolbutton" id="special_str">no marco</button>';
                 }else if(session.game.cm.reduce(function(a, b){return a + b;}, 0)<10 &&
                          (session.challenge.bolas.length-3)>60 &&
                          session.used_messages.indexOf('no marco')==-1){
-                    special_str='<button id="special_str" class="minibutton">no marco</button>';
+                    special_str='<button class="coolbutton" id="special_str">no marco</button>';
                 }
                 // TODO continuar por aquí...
                 
@@ -493,7 +521,7 @@ function listen_challenge(challenge){
                 </table>\
                  '+special_str+'\
                  '+linea_str+'\
-                 <button id="bingo" class="minibutton">BINGO</button> <br />\
+                 <button id="bingo"  class="coolbutton">BINGO</button> <br />\
                 <br /><button id="go-back" class="minibutton fixed-bottom-right go-back">&lt;</button><br />\
                 ';
                 print_card(session.challenge.u[session.user].carton);
@@ -506,10 +534,10 @@ function listen_challenge(challenge){
                         special_str = "Me quedan pocas, voy a ganar ;-)";
                         break;
                       case "no marco":
-                        special_str = "No marco ni a la de tres! :-(";
+                        special_str = "¡No marco ni a la de tres! :-(";
                         break;
                       default:
-                        special_str = "no se que iba a decir...";
+                        special_str = "No se que iba a decir...";
                     }
                     updates['challenges/'+session.challenge_name+'/question'] = '<b>'+session.user+'</b> dice: '+special_str;
                     firebase.database().ref().update(updates);
@@ -544,11 +572,15 @@ function cancel_challenge_prompt(challenge,ask){
     }
 }
 
-function cancel_challenge(challenge){
+function cancel_challenge(){
     //clearTimeout(show_answer_timeout);
     clearTimeout(session.beat_timeout);
     firebase.database().ref().child('challenges/'+session.challenge_name).off();
     firebase.database().ref().child('challenges-beat/'+session.challenge_name).off();
+    // re-do... just in case
+    firebase.database().ref().child('challenges/'+session.challenge_name).remove();
+    firebase.database().ref().child('challenges-beat/'+session.challenge_name).remove();
+    // ----
     reset_local_game();
     console.log('challenge canceled!');
 
@@ -563,7 +595,7 @@ var timeout_callback=function(){
 	activity_timer.reset();
 	console.log("activity_timer timeout_callback");
     if(session.challenge!=null && session.challenge.question!=''){
-        setTimeout(function(){clear_msg();}.bind(this),7000);
+        setTimeout(function(){clear_msg();}.bind(this),6800);
     }else{
         new_number();
     }
@@ -895,11 +927,11 @@ function is_linea(user){
 function check_linea(user){
     if(typeof(user)=='undefined') user=session.user;
     var updates = {};
-    var question='<b>'+user+'</b> ha cantado línea!<br />';
+    var question='<b>¡'+user+'</b> ha cantado línea!<br />';
     if(!is_linea(user)){
         question+=" la línea <b>no es correcta</b>.<br />El [["+session.game.tmpError+"]] no ha salido.<br />";
     }else{
-        question+=' la línea es <b>correcta</b>!<br />';
+        question+=' la línea es ¡<b>correcta</b>!<br />';
         updates['challenges/'+session.challenge_name+'/linea'] = user;
     }
     //move to linea
@@ -948,7 +980,7 @@ if(QueryString.hasOwnProperty('debug') && QueryString.debug=='true') debug=true;
 prevent_scrolling();
 
 var mobile_without_wakelock=false;
-if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && ( !('wakeLock' in navigator) && !('getWakeLock' in navigator) && !('requestWakeLock' in navigator)  && !('WakeLock' in window) ) {
+if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && ( !('wakeLock' in navigator) && !('getWakeLock' in navigator) && !('requestWakeLock' in navigator)  && !('WakeLock' in window) )) {
     mobile_without_wakelock=true;
 }
 
@@ -962,7 +994,22 @@ if(is_app){
 }
 
 function onDeviceReady() {
+    document.removeEventListener('deviceready', onDeviceReady, false);
     console.log('userAgent: '+navigator.userAgent+' is_app: '+is_app);
+    if(is_app){
+        admob.createBannerView(
+        {
+          publisherId:          "ca-app-pub-3940256099942544/6300978111",
+          adSize:               admob.AD_SIZE.SMART_BANNER,
+          tappxShare:           0,
+         // isTesting:            true,
+          bannerAtTop:          false,
+          overlap:              true,
+          autoShowBanner:       false,
+          autoShowInterstitial: false
+        }
+        );   //admob.AD_SIZE.BANNER  true ca-app-pub-1143362957092180/2727794713
+    }
 	menu_screen(); // <----- entry point
 }
 

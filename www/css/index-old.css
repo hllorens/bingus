@@ -42,11 +42,33 @@ green B3E099
 */
 
 
-
+/* latin-ext */
+@font-face {
+  font-family: 'Patrick Hand SC';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Patrick Hand SC'), local('PatrickHandSC-Regular'), url(../fonts/patrick-hand-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Patrick Hand SC';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Patrick Hand SC'), local('PatrickHandSC-Regular'), url(../fonts/patrick-hand-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+/* latin woff format (for IE) */
+@font-face {
+  font-family: 'Patrick Hand SC';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Patrick Hand SC'), local('PatrickHandSC-Regular'), url(../fonts/patrick-hand-latin.woff) format('woff');
+}
 
 
 html{margin:0; padding:0; background: #111;}
-body{margin:0 auto; padding:0; font-family: Roboto, Arial, sans-serif; color:#555; width:100%;
+body{margin:0 auto; padding:0; font:normal 28px monospace, Arial, sans-serif; color:#555; width:100%;
     -webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
     -webkit-text-size-adjust: none;             /* prevent webkit from resizing text to fit */
     -webkit-user-select: none;                  /* prevent copy paste, to allow, change 'none' to 'text' */
@@ -66,27 +88,9 @@ body{margin:0 auto; padding:0; font-family: Roboto, Arial, sans-serif; color:#55
 	z-index: 99999; /* could work without this. Just to make sure in case other elements have also positioning and positive z-indez */
 }
 
-/********* MAKE SURE NO ODD DOTTED BORDERS APPEAR IN SOME BROWSERS ****/
 img{border:none;}
-a,button,input{text-decoration:none;outline: none;}
+a{text-decoration:none;}
 a:hover{text-decoration:underline;}
-a:focus,
-button:focus,
-input:focus,
-textarea:focus {
-outline: none;
-}
-textarea,
-input.text,
-input[type="text"],
-input[type="button"],
-input[type="submit"],
-.input-checkbox {
--webkit-appearance: none;
-border-radius: 0;
-}
-/********* MAKE SURE NO ODD DOTTED BORDERS APPEAR IN SOME BROWSERS ****/
-
 
 /* clearfix */
 .cf:before,
@@ -116,11 +120,9 @@ min-height: 80%; CANNOT BE A PERCENTAGE :() min-width:640px; */
 /*h1{font-size: 26px; margin: 5px; color: #722;}*/
 
 #zone_canvas{position:absolute; overflow: hidden;background:#fff;top:0px; bottom:1%; width:100%;} /*#fee*/
-#zone_canvas_vcentered{font-size:2vw;}
 /*HEIGHT perhaps use variables? css3?*/
 
-/*select, button {font-size:inherit;}*/
-
+select, button {font-family:inherit;font-size:inherit;}
 
 #zone_score{font-weight: bold; font-size: 14px; padding: 5px;}
 .col_left{float: left;margin-left:10px;}
@@ -157,17 +159,6 @@ min-height: 80%; CANNOT BE A PERCENTAGE :() min-width:640px; */
 	font-size: 4vw;
 }
 
-#players {
-	border-collapse: collapse;
-    margin: 0 auto 5px;
-    background:#fff8eb;
-    width:84%;
-}
-#players td {
-	border: 2px #666 solid;
-	text-align: center;
-	font-size: 2vw;
-}
 
 
 #bolas{
@@ -185,29 +176,12 @@ min-height: 80%; CANNOT BE A PERCENTAGE :() min-width:640px; */
     background-color: #faa;
 }
 
-.coolinput{
-    padding-left:1vw;
-    font-size:4vw;
-    box-sizing: border-box;
-    border: solid 4px #41403E;
-    -webkit-align-self: center;
-      -ms-flex-item-align: center;
-          align-self: center;
-    background: transparent;
-    /*padding: 1rem 1rem;*/
-    font-family: Roboto, Arial, sans-serif;
-    margin: 8px 4px;
-    color: #41403E;
-    letter-spacing: 1px;
-    outline: none;
-    box-shadow: 2px 8px 4px -6px rgba(0, 0, 0, 0.3);
-    /*box-shadow: 20px 38px 34px -26px rgba(0, 0, 0, 0.2);*/
-    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-}
+
 
 .coolbutton{
     font-variant: small-caps;
     box-sizing: border-box;
+    font-family: 'Patrick Hand SC', cursive;
     border: solid 4px #41403E;
     -webkit-align-self: center;
       -ms-flex-item-align: center;
@@ -224,7 +198,6 @@ min-height: 80%; CANNOT BE A PERCENTAGE :() min-width:640px; */
     box-shadow: 2px 8px 4px -6px rgba(0, 0, 0, 0.3);
     /*box-shadow: 20px 38px 34px -26px rgba(0, 0, 0, 0.2);*/
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0); /*remove odd rectangle*/
 }
 button:active {
   box-shadow: 2px 8px 4px -6px rgba(0, 0, 0, 0.8);
@@ -353,6 +326,7 @@ button.go-back{
     font-weight: bold;
 	padding: 5px 12px;
     box-sizing: border-box;
+    font-family: 'Patrick Hand SC', cursive;
     border: solid 4px #41403E;
     -webkit-align-self: center;
       -ms-flex-item-align: center;
@@ -438,9 +412,11 @@ button.go-back{
 }
 .js-modal-correct h1{
 	color: #171;
+    	font-family: 'Patrick Hand SC', cursive;
 	font-size:38px;
 }
 .js-modal-correct span{
+    	font-family: 'Patrick Hand SC', cursive;
 	font-size:32px;
 }
 
@@ -457,9 +433,11 @@ button.go-back{
 }
 .js-modal-incorrect h1{
 	color: #711;
+    	font-family: 'Patrick Hand SC', cursive;
 	font-size:38px;
 }
 .js-modal-incorrect span{
+    	font-family: 'Patrick Hand SC', cursive;
 	font-size:32px;
 }
 
