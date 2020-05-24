@@ -84,7 +84,7 @@ function menu_screen(){
     canvas_zone_vcentered.innerHTML=' \
     <div id="menu-logo-div"></div> \
     <nav id="responsive_menu">\
-    <span style="font-size:6vw;color:#0b5394;font-weight:bold;">BINGO</span><br /><span style="font-family:cursive;">¡para TODOS!</span><br />\
+    <span style="font-size:9vw;color:#0b5394;font-weight:bold;">BINGO</span><br /><span style="font-family:cursive;font-size:4vw;">¡para TODOS!</span><br />\
     <br /><button id="create-button" class="coolbutton">Crear partida</button> \
     <br /><button id="join-button" class="coolbutton">Unirse a partida</button>\
     </nav>\
@@ -355,13 +355,13 @@ function listen_challenge(challenge){
             ';
         if(canvas_zone_vcentered.innerHTML.indexOf('GAME OVER')==-1){
             canvas_zone_vcentered.innerHTML=canceltext;
-        }else{
+            document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
+                 menu_screen();
+            });
+        }else if(canvas_zone_vcentered.innerHTML.indexOf('GAME CANCELLED')==-1){
             canvas_zone_vcentered.innerHTML+='GAME CANCELLED! <br />Sayonara baby!<br /><br />';
         }
         cancel_challenge();
-        document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
-             menu_screen();
-		});
         
     }else if(challenge.game_status=='over'){ // OVER!! -----------------------------------------------
         activity_timer.stop();
@@ -374,7 +374,7 @@ function listen_challenge(challenge){
         ';
         if(is_app){ //admob
             admob.showBannerAd(true, function(){document.getElementById('spaninfo').innerHTML+="<br /><br /><span style=\"font-size:0.7vw;\">BANNER OK</span>";}, function(){document.getElementById('spaninfo').innerHTML+="<br /><br /><span style=\"font-size:0.7vw;\">BANNER FAIL</span>";});
-        }else if(!is_local()){ // adsense
+        }else if(!is_local()){ // adsense in theory ... I could add the scripts here too
              canvas_zone_vcentered.innerHTML+='<ins class="adsbygoogle" style="display:block" data-ad-format="fluid"\
              data-ad-layout-key="-fb+5w+4e-db+86"\
              data-ad-client="ca-pub-1143362957092180"\
@@ -595,7 +595,7 @@ var timeout_callback=function(){
 	activity_timer.reset();
 	console.log("activity_timer timeout_callback");
     if(session.challenge!=null && session.challenge.question!=''){
-        setTimeout(function(){clear_msg();}.bind(this),6800);
+        setTimeout(function(){clear_msg();}.bind(this),7000);
     }else{
         new_number();
     }
@@ -799,37 +799,39 @@ function mark(num){
 
 function new_number(){
     // use session challenge
-    if(session.challenge.bolas.length<93){ // 3 zeros added to start...
-        var bola=0;
-        var todas=new Array(90);
-        for(var i = 0; i < todas.length; i++){
-          todas[i]=i+1;
+    if(session.challenge.u[session.user].role=="inviter"){
+        if(session.challenge.bolas.length<93){ // 3 zeros added to start...
+            var bola=0;
+            var todas=new Array(90);
+            for(var i = 0; i < todas.length; i++){
+              todas[i]=i+1;
+            }
+            var diff = todas.filter(x => !session.challenge.bolas.includes(x));
+            bola=diff[Math.floor(Math.random()*diff.length)];
+            //do{
+            //}while(session.challenge.bolas.indexOf(bola)!=-1);
+            session.challenge.bolas.push(bola);
+            var updates = {};
+            updates['challenges/'+session.challenge_name+'/bolas'] = session.challenge.bolas;
+            firebase.database().ref().update(updates);
+            activity_timer.start(); // this will fire next events
+        }else{
+            activity_timer.stop();
+            var question='Ya han salido todas las bolas... ay ay ay alguien se ha dormido!<br />';
+            var updates = {};
+            session.challenge.cantadores.push('..nadie..');
+            if(session.challenge.cantadores[0]==""){
+                session.challenge.cantadores.shift();
+            }
+            updates['challenges/'+session.challenge_name+'/game_status'] = 'over';
+            updates['challenges/'+session.challenge_name+'/cantadores'] = session.challenge.cantadores;
+            let timestamp=session.timestamp;
+            timestamp=timestamp.getFullYear()+"-"+
+            pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + "_" +
+              pad_string(timestamp.getHours(),2,"0") + ""  + pad_string(timestamp.getMinutes(),2,"0");
+            updates['challenges-log/'+timestamp+'_'+session.challenge_name+'/'] = session.challenge;
+            firebase.database().ref().update(updates);
         }
-        var diff = todas.filter(x => !session.challenge.bolas.includes(x));
-        bola=diff[Math.floor(Math.random()*diff.length)];
-        //do{
-        //}while(session.challenge.bolas.indexOf(bola)!=-1);
-        session.challenge.bolas.push(bola);
-        var updates = {};
-        updates['challenges/'+session.challenge_name+'/bolas'] = session.challenge.bolas;
-        firebase.database().ref().update(updates);
-        activity_timer.start(); // this will fire next events
-    }else{
-        activity_timer.stop();
-        var question='Ya han salido todas las bolas... ay ay ay alguien se ha dormido!<br />';
-        var updates = {};
-        session.challenge.cantadores.push('..nadie..');
-        if(session.challenge.cantadores[0]==""){
-            session.challenge.cantadores.shift();
-        }
-        updates['challenges/'+session.challenge_name+'/game_status'] = 'over';
-        updates['challenges/'+session.challenge_name+'/cantadores'] = session.challenge.cantadores;
-        let timestamp=session.timestamp;
-        timestamp=timestamp.getFullYear()+"-"+
-        pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + "_" +
-          pad_string(timestamp.getHours(),2,"0") + ""  + pad_string(timestamp.getMinutes(),2,"0");
-        updates['challenges-log/'+session.challenge_name+'_'+timestamp+'/'] = session.challenge;
-        firebase.database().ref().update(updates);
     }
 }
 

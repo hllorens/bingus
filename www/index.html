@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 <html>
     <head>
-      <title>BINGO DE AYALA</title>
+      <title>BINGO para Todos</title>
       <meta http-equiv="content-type" content="text/html; charset=UTF-8">
       <meta charset="UTF-8">
       <link rel="icon" href="favicon.png">
@@ -25,13 +25,13 @@
             <div id="zone_canvas">
                 <div class="text-center vertical-center-container">
                     <div id="zone_canvas_vcentered" class="text-center vertical-center-content">
-                        BINGO PARA TODOS
+                        BINGO para TODOS
                     </div>
                 </div>
             </div>
             <!-- temporary to be removed when loaded -->
             <div id="splash_screen" >
-                <br /><br /><span style="font-size:36px;color:#eee;">BINGO PARA TODOS</span>
+                <br /><br /><span style="font-size:36px;color:#eee;">BINGO para TODOS (splash)</span>
                 <br /><button id="splash" class="coolbutton">¡Vamos!</button>
             </div>
             <!-- ----------------------------------- -->
@@ -39,7 +39,7 @@
         </div>
         
         <!-- scripts -->
-        <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
         <script src="external-git-ignored/cognitionis-js/js/expose_timers.js"></script>
         <script src="external-git-ignored/cognitionis-js/js/cognitionis.utils.js"></script>
         <script src="external-git-ignored/cognitionis-js/js/firebase-3.6.4.js"></script>
@@ -51,9 +51,16 @@
          <script src="js/index.js"></script>-->
         <script type="text/javascript" src="cordova.js"></script>
         <script src="js/NoSleepWakeLockAPI.min.js"></script>
-        <script src="js/bingo3.js"></script>
+        <!--<script src="js/bingo3.js"></script>-->
+        <script type="text/javascript" language="javascript">  
+            var versionUpdate = (new Date()).getTime();  
+            var script = document.createElement("script");  
+            script.type = "text/javascript";  
+            script.src = "js/bingo3.js?v=" + versionUpdate;  
+            document.body.appendChild(script);  
+        </script>
         <script>
-            if(document.getElementById("splash")!== null){
+            if(document.getElementById("splash")!= null){
                 document.getElementById("splash").addEventListener(clickOrTouch,function(){
                     alert("allá vamos! ;-)");
                     menu_screen();

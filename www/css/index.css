@@ -218,7 +218,7 @@ min-height: 80%; CANNOT BE A PERCENTAGE :() min-width:640px; */
     -webkit-transition: all .15s ease;
     transition: all .15s ease;
     color: #41403E;
-    font-size: 32px; /*1.5rem;*/
+    font-size: 32px; /* 5vw is perfect or 1.5rem;*/
     letter-spacing: 1px;
     outline: none;
     box-shadow: 2px 8px 4px -6px rgba(0, 0, 0, 0.3);
