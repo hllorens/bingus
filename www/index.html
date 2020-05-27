@@ -29,12 +29,12 @@
                     </div>
                 </div>
             </div>
-            <!-- temporary to be removed when loaded -->
+            <!-- temporary to be removed when loaded 
             <div id="splash_screen" >
                 <br /><br /><span style="font-size:36px;color:#eee;">BINGO para TODOS (splash)</span>
                 <br /><button id="splash" class="coolbutton">¡Vamos!</button>
             </div>
-            <!-- ----------------------------------- -->
+             ----------------------------------- -->
             
         </div>
         
@@ -60,8 +60,10 @@
             document.body.appendChild(script);  
         </script>
         <script>
-            if(document.getElementById("splash")!= null){
+            let splash=document.getElementById("splash")
+            if(splash!= null){
                 document.getElementById("splash").addEventListener(clickOrTouch,function(){
+                    splash.parentNode.removeChild(splash);
                     alert("allá vamos! ;-)");
                     menu_screen();
                 });

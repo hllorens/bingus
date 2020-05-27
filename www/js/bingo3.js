@@ -300,7 +300,7 @@ function handle_zombies(challenge_beat) {
                                         updates['challenges/'+session.challenge_name+'/u/'+leader+'/role']='inviter';
                                     }
                                     if(session.challenge!=null && session.challenge.game_status=='playing'){
-                                        activity_timer.start(); // this will fire next events...
+                                        activity_timer.start(); // this will fire next events..., by the time this fires, the role will be inviter
                                         updates['challenges/'+session.challenge_name+'/question'] = '<b>'+user+'</b> se ha desconectado,<br />el resto,';
                                     }
                                     if(session.zombies_to_kill.indexOf(user)!=-1){
@@ -592,6 +592,7 @@ function cancel_challenge(){
 var countdown_limit_end_secs=7;
 activity_timer.set_limit_end_seconds(countdown_limit_end_secs); 
 var timeout_callback=function(){
+    // we should probably kill require inviter role here so we ensure only 1 owns activity_timer
 	activity_timer.reset();
 	console.log("activity_timer timeout_callback");
     if(session.challenge!=null && session.challenge.question!=''){
@@ -1016,11 +1017,11 @@ function onDeviceReady() {
 }
 
 // window.onload = function () does not work for apps
-window.onload = function () { 
+/*window.onload = function () { 
 	if(debug) console.log("win.onload");
 	//var splash=document.getElementById("splash_screen");
 	//if(splash!=null && (ResourceLoader.lazy_audio==false || ResourceLoader.not_loaded['sounds'].length==0)){ splash.parentNode.removeChild(splash); }
-}
+}*/
 
 
 
