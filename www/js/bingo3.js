@@ -350,25 +350,26 @@ function listen_challenge(challenge){
     if(challenge==null || challenge==undefined){ // CANCELLED!! -----------------------------------------------
         let canceltext=' \
               GAME CANCELLED! <br />Sayonara baby!<br /><br />\
-              <button class="coolbutton" id="accept_over">inicio</button>\
+              <button class="coolbutton" id="back_start">inicio</button>\
             <br />\
             ';
         if(canvas_zone_vcentered.innerHTML.indexOf('GAME OVER')==-1){
             canvas_zone_vcentered.innerHTML=canceltext;
-            document.getElementById("accept_over").addEventListener(clickOrTouch,function(){
-                 menu_screen();
-            });
         }else if(canvas_zone_vcentered.innerHTML.indexOf('GAME CANCELLED')==-1){
-            canvas_zone_vcentered.innerHTML+='GAME CANCELLED! <br />Sayonara baby!<br /><br />';
+            canvas_zone_vcentered.innerHTML='Sayonara baby!<br /><button class="coolbutton" id="back_start">inicio</button>'+canvas_zone_vcentered.innerHTML;
+            let elem=document.getElementById("accept_over")
+            if(elem) elem.parentNode.removeChild(elem);
         }
         cancel_challenge();
-        
+        document.getElementById("back_start").addEventListener(clickOrTouch,function(){
+             menu_screen();
+        });
     }else if(challenge.game_status=='over'){ // OVER!! -----------------------------------------------
         activity_timer.stop();
         console.log('challenge over!');
         canvas_zone_vcentered.innerHTML=' \
-          GAME OVER! <br /><br />Cantado por:'+challenge.cantadores.join(', ')+'<br />'+get_winner_string(challenge)+'<br />\
-          <button class="coolbutton" id="accept_over">accept</button>\
+          <b>GAME OVER!</b><br />Bingo cantado por: '+challenge.cantadores.join(', ')+'<br />'+get_winner_string(challenge)+'<br />\
+          <button class="coolbutton" id="accept_over">Aceptar</button>\
         <br />\
         <br /><span id="spaninfo" style="font-size:0.7vw">is_app='+is_app+'</span> \
         ';
