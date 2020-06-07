@@ -893,7 +893,7 @@ function check_bingo(user){
         timestamp=timestamp.getFullYear()+"-"+
         pad_string((timestamp.getMonth()+1),2,"0") + "-" + pad_string(timestamp.getDate(),2,"0") + "_" +
          pad_string(timestamp.getHours(),2,"0") + ""  + pad_string(timestamp.getMinutes(),2,"0");
-        updates['challenges-log/'+session.challenge_name+'_'+timestamp+'/'] = session.challenge;
+        updates['challenges-log/'+timestamp+'_'+session.challenge_name+'/'] = session.challenge;
         firebase.database().ref().update(updates);
     }
 }
